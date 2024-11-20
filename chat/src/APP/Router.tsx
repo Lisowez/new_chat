@@ -3,6 +3,7 @@ import Register from "../Register/Register";
 import Chat from "../Chat/Chat";
 import Login from "../Login/Login";
 import RedirectPage from "./RedirectPage";
+import OneChat from "../OneChat/OneChat";
 
 const router = createBrowserRouter([
   {
@@ -20,6 +21,10 @@ const router = createBrowserRouter([
   {
     path: "chat",
     element: <Chat />,
+  },
+  {
+    path: "chat/:id",
+    element: <OneChat />,
   },
 ]);
 

@@ -1,47 +1,31 @@
 // src/Chat.js
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const Chat = () => {
-  const [accessToken, setAccessToken] = useState("");
-  const [serverStatus, setServerStatus] = useState("");
-  const [rooms, setRooms] = useState([]);
-  const [roomName, setRoomName] = useState("");
-  const [newRoomName, setNewRoomName] = useState("");
-  const [activeUsers, setActiveUsers] = useState([]);
-  const [checkRoomsName, setCheckRoomsName] = useState("");
-  const [inviteList, setInviteList] = useState("");
+  const [accessToken, setAccessToken] = useState(
+    localStorage.getItem("access_token")
+  ); //токен
+  const [user, setUser] = useState(localStorage.getItem("user") || "user"); //имя вошедшего
+  const [rooms, setRooms] = useState([]); //список комнат
+  const [roomName, setRoomName] = useState(""); //имя  комнаты при содании
+  const [newRoomName, setNewRoomName] = useState(""); // id  созданой комнаты
+  // const [activeUsers, setActiveUsers] = useState([]);
+  // const [checkRoomsName, setCheckRoomsName] = useState("");
+  const [inviteList, setInviteList] = useState(""); // имя приглашаемого в комнату пользователя
+  const [idRoom, setIdRoom] = useState(""); // id комнаты для поиска
+  const [idRoomName, setIdRoomName] = useState(""); // имя комнаты по ее ID
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     setAccessToken(localStorage.getItem("access_token"));
+    setUser(localStorage.getItem("user"));
+    getRooms();
   }, []);
 
-  // Функция для проверки доступности сервера
-  const checkServer = async () => {
-    try {
-      const response = await fetch(
-        "https://matrix-test.maxmodal.com/.well-known/matrix/client",
-        {
-          // эндпоинт, который можно использовать для проверки сервера
-          method: "GET",
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setServerStatus("Сервер доступен: " + data["m.homeserver"].base_url);
-        console.log(data["m.homeserver"].base_url);
-        console.log("Сервер доступен!", data["m.homeserver"].base_url);
-      } else {
-        throw new Error("Сервер не доступен. Статус: " + response.status);
-      }
-    } catch (error) {
-      setServerStatus(`Ошибка: ${error.message}`);
-      console.error("Ошибка проверки сервера:", error);
-    }
-  };
-
   // Функция для получения всех комнат на сервере
-  const getRooms = async (accessToken) => {
+  const getRooms = async () => {
     try {
       const response = await fetch(
         "https://matrix-test.maxmodal.com/_matrix/client/v3/joined_rooms",
@@ -85,7 +69,10 @@ const Chat = () => {
             },
             name: roomName,
             preset: "public_chat",
-            invite: inviteList.split(",").map((x) => x.trim()),
+            invite:
+              inviteList && inviteList.length > 0
+                ? inviteList.split(",").map((x) => x.trim())
+                : undefined,
           }),
         }
       );
@@ -99,11 +86,34 @@ const Chat = () => {
     }
   };
 
-  // Функция для получения списка пользователей в комнате
-  const getActiveUsers = async () => {
+  // // Функция для получения списка пользователей в комнате
+  // const getActiveUsers = async () => {
+  //   try {
+  //     const response = await fetch(
+  //       `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${checkRoomsName}/joined_members`,
+  //       {
+  //         method: "GET",
+  //         headers: {
+  //           Authorization: `Bearer ${accessToken}`,
+  //           "Content-Type": "application/json",
+  //         },
+  //       }
+  //     );
+  //     const data = await response.json();
+  //     if (response.ok) {
+  //       const users = Object.keys(data.joined);
+  //       setActiveUsers((prev) => [...prev, ...users]);
+  //     }
+  //   } catch (error) {
+  //     console.error("Ошибка при получении пользователей:", error);
+  //   }
+  // };
+
+  // получение названия комнаты по ID
+  const fetchRoomName = async () => {
     try {
       const response = await fetch(
-        `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${checkRoomsName}/joined_members`,
+        `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${idRoom}/state/m.room.name`,
         {
           method: "GET",
           headers: {
@@ -112,39 +122,38 @@ const Chat = () => {
           },
         }
       );
-      const data = await response.json();
-      if (response.ok) {
-        const users = Object.keys(data.joined);
-        setActiveUsers((prev) => [...prev, ...users]);
+
+      if (!response.ok) {
+        throw new Error(
+          "Ошибка при получении названия комнаты: " + response.status
+        );
       }
+
+      const data = await response.json();
+      setIdRoomName(data.name); // получаем название комнаты из ответа
     } catch (error) {
-      console.error("Ошибка при получении пользователей:", error);
+      console.error(error.message);
     }
   };
 
   return (
     <>
+      <h1>Привет {user}</h1>
       <h1>Matrix Chat</h1>
-
-      {/* Кнопка для проверки статуса сервера */}
-      <div>
-        <h2>Проверка состояния сервера</h2>
-        <button onClick={checkServer}>Проверить сервер</button>
-        {serverStatus && <div>{serverStatus}</div>}{" "}
-        {/* Сообщение о состоянии сервера */}
-      </div>
-
-      {/* Уведомление об успешном входе */}
-      {accessToken && <div>Вы успешно вошли в систему!</div>}
 
       {/* проверка всех комнат */}
       <h2>Проверка всех комнат</h2>
-      <button onClick={() => getRooms(accessToken)}>
-        Получить все комнаты
-      </button>
+      <button onClick={() => getRooms()}>Получить все комнаты</button>
       <div>
         {rooms && rooms.length > 0
-          ? rooms.map((room) => <div key={room}>{room}</div>)
+          ? rooms.map((room) => (
+              <div key={room} id={room}>
+                {room}
+                <button onClick={() => navigate(`/chat/${room}`)}>
+                  Войти в комнату
+                </button>
+              </div>
+            ))
           : "Нет комнат"}
       </div>
 
@@ -164,7 +173,7 @@ const Chat = () => {
         <div>id комнаты - {newRoomName}</div>
       </div>
 
-      {/*проверка активных пользователей в комнате*/}
+      {/* проверка активных пользователей в комнате
       <h2>Проверка активных пользователей в комнате</h2>
       <input
         type='text'
@@ -178,7 +187,18 @@ const Chat = () => {
         {activeUsers && activeUsers.length > 0
           ? activeUsers.map((user) => <div key={user}>{user}</div>)
           : "Нет активных пользователей"}
-      </div>
+      </div> */}
+      {/*проверка названия комнаты по ID*/}
+      <h2>проверка названия комнаты по ID</h2>
+      <input
+        type='text'
+        placeholder='id комнаты'
+        onChange={(e) => setIdRoom(e.target.value)}
+      />
+      <button onClick={() => fetchRoomName()}>
+        Получить активных пользователей
+      </button>
+      <div>{idRoomName ? idRoomName : "Нет комнаты"}</div>
     </>
   );
 };
