@@ -1,13 +1,21 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 
 const OneChat = () => {
   const id = useParams().id;
   const [accessToken, setAccessToken] = useState(
     localStorage.getItem("access_token")
   );
+  const [myId, setMyId] = useState(localStorage.getItem("user"));
   const [messages, setMessages] = useState([]);
   const [message, setMessage] = useState("");
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    setAccessToken(localStorage.getItem("access_token"));
+    setMyId(localStorage.getItem("user"));
+  }, []);
 
   useEffect(() => {
     if (accessToken) fetchMessages();
@@ -72,7 +80,7 @@ const OneChat = () => {
   };
 
   return (
-    <div>
+    <div style={{ position: "relative" }}>
       {id}
       <input
         type='text'
@@ -81,10 +89,21 @@ const OneChat = () => {
         onChange={(e) => setMessage(e.target.value)}
       />
       <button onClick={handleSendMessage}>Отправить</button>
+      <div>
+        <button onClick={() => navigate(-1)}>назад</button>
+      </div>
       {/* <button onClick={fetchMessages}>Проверка</button> */}
       <h1>сообщения</h1>
       {messages.map((mes) => (
-        <div key={mes.id}>{mes.content.body}</div>
+        <div
+          style={{
+            position: "relative",
+            right: mes.sender_id === myId ? "0%" : "-80%",
+          }}
+          key={mes.event_id}
+        >
+          {mes.content.body}
+        </div>
       ))}
     </div>
   );

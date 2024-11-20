@@ -6,7 +6,9 @@ const Chat = () => {
   const [accessToken, setAccessToken] = useState(
     localStorage.getItem("access_token")
   ); //токен
-  const [user, setUser] = useState(localStorage.getItem("user") || "user"); //имя вошедшего
+  const [user, setUser] = useState(
+    localStorage.getItem("user").slice(1, -25) || "user"
+  ); //имя вошедшего
   const [rooms, setRooms] = useState([]); //список комнат
   const [roomName, setRoomName] = useState(""); //имя  комнаты при содании
   const [newRoomName, setNewRoomName] = useState(""); // id  созданой комнаты
@@ -20,11 +22,22 @@ const Chat = () => {
 
   useEffect(() => {
     setAccessToken(localStorage.getItem("access_token"));
-    setUser(localStorage.getItem("user"));
+    setUser(localStorage.getItem("user").slice(1, -25));
     getRooms();
+    if (rooms.length > 0) {
+      setRooms(
+        rooms.map(async (x) => {
+          return await fetchRoomName(x);
+        })
+      );
+    }
   }, []);
 
-  // Функция для получения всех комнат на сервере
+  useEffect(() => {
+    getRooms();
+  }, [newRoomName]);
+
+  // Функция для получения всех комнат на сервер
   const getRooms = async () => {
     try {
       const response = await fetch(
@@ -40,8 +53,15 @@ const Chat = () => {
 
       const data = await response.json();
       if (response.ok) {
-        console.log("Комнаты успешно получены:", data);
-        setRooms(data.joined_rooms);
+        const idRooms = data.joined_rooms;
+        const roomNames = await Promise.all(
+          idRooms.map((id) => fetchRoomName(id))
+        );
+        const idAndName = roomNames.map((room, index) => {
+          return { name: room, id: idRooms[index] };
+        });
+
+        setRooms(idAndName);
         return data; // Возвращаем данные с комнатами
       } else {
         throw new Error(data.error || "Ошибка получения комнат");
@@ -110,10 +130,10 @@ const Chat = () => {
   // };
 
   // получение названия комнаты по ID
-  const fetchRoomName = async () => {
+  const fetchRoomName = async (id) => {
     try {
       const response = await fetch(
-        `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${idRoom}/state/m.room.name`,
+        `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${id}/state/m.room.name`,
         {
           method: "GET",
           headers: {
@@ -131,6 +151,7 @@ const Chat = () => {
 
       const data = await response.json();
       setIdRoomName(data.name); // получаем название комнаты из ответа
+      return data.name;
     } catch (error) {
       console.error(error.message);
     }
@@ -147,9 +168,9 @@ const Chat = () => {
       <div>
         {rooms && rooms.length > 0
           ? rooms.map((room) => (
-              <div key={room} id={room}>
-                {room}
-                <button onClick={() => navigate(`/chat/${room}`)}>
+              <div key={room.id} id={room.id}>
+                <span>{room.name}</span>
+                <button onClick={() => navigate(`/chat/${room.id}`)}>
                   Войти в комнату
                 </button>
               </div>
@@ -189,7 +210,7 @@ const Chat = () => {
           : "Нет активных пользователей"}
       </div> */}
       {/*проверка названия комнаты по ID*/}
-      <h2>проверка названия комнаты по ID</h2>
+      {/* <h2>проверка названия комнаты по ID</h2>
       <input
         type='text'
         placeholder='id комнаты'
@@ -198,7 +219,7 @@ const Chat = () => {
       <button onClick={() => fetchRoomName()}>
         Получить активных пользователей
       </button>
-      <div>{idRoomName ? idRoomName : "Нет комнаты"}</div>
+      <div>{idRoomName ? idRoomName : "Нет комнаты"}</div> */}
     </>
   );
 };
