@@ -51,8 +51,8 @@ const Register = () => {
           const data = await response.json();
           if (response.ok) {
             setRegistrationMessage("Успешно зарегистрирован!");
-            localStorage.setItem("accessToken", data.access_token);
-            localStorage.setItem("refreshToken", data.refresh_token);
+            sessionStorage.setItem("accessToken", data.access_token);
+            sessionStorage.setItem("refreshToken", data.refresh_token);
             navigate("/chat");
             setSession("");
             console.log("Пользователь успешно зарегистрирован!", data);

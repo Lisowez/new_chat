@@ -30,8 +30,8 @@ const Login = () => {
 
       const data = await response.json();
       if (response.ok) {
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("user", data.user_id);
+        sessionStorage.setItem("access_token", data.access_token);
+        sessionStorage.setItem("user", data.user_id);
         setLoginError(""); // Очистить сообщение об ошибке
         navigate("/chat");
         console.log("Успешно аутентифицирован!", data);

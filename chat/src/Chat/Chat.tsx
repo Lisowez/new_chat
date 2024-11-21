@@ -4,10 +4,10 @@ import { useNavigate } from "react-router-dom";
 
 const Chat = () => {
   const [accessToken, setAccessToken] = useState(
-    localStorage.getItem("access_token")
+    sessionStorage.getItem("access_token")
   ); //токен
   const [user, setUser] = useState(
-    localStorage.getItem("user").slice(1, -25) || "user"
+    sessionStorage.getItem("user").slice(1, -25) || "user"
   ); //имя вошедшего
   const [rooms, setRooms] = useState([]); //список комнат
   const [roomName, setRoomName] = useState(""); //имя  комнаты при содании
@@ -17,12 +17,13 @@ const Chat = () => {
   const [inviteList, setInviteList] = useState(""); // имя приглашаемого в комнату пользователя
   const [idRoom, setIdRoom] = useState(""); // id комнаты для поиска
   const [idRoomName, setIdRoomName] = useState(""); // имя комнаты по ее ID
+  const [inviteRooms, setInviteRooms] = useState([]);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    setAccessToken(localStorage.getItem("access_token"));
-    setUser(localStorage.getItem("user").slice(1, -25));
+    setAccessToken(sessionStorage.getItem("access_token"));
+    setUser(sessionStorage.getItem("user").slice(1, -25));
     getRooms();
     if (rooms.length > 0) {
       setRooms(
@@ -36,6 +37,13 @@ const Chat = () => {
   useEffect(() => {
     getRooms();
   }, [newRoomName]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      getSyncUpdates();
+    }, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Функция для получения всех комнат на сервер
   const getRooms = async () => {
@@ -62,7 +70,7 @@ const Chat = () => {
         });
 
         setRooms(idAndName);
-        return data; // Возвращаем данные с комнатами
+        return data; // Возвращаем данные с комнатам
       } else {
         throw new Error(data.error || "Ошибка получения комнат");
       }
@@ -157,10 +165,77 @@ const Chat = () => {
     }
   };
 
+  //получить приглашения в комнаты
+  const getSyncUpdates = async () => {
+    try {
+      const response = await fetch(
+        "https://matrix-test.maxmodal.com/_matrix/client/v3/sync",
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Ошибка при синхронизации: " + response.status);
+      }
+
+      const data = await response.json();
+      const idRooms = Object.keys(data.rooms.invite);
+      setInviteRooms(idRooms);
+    } catch (error) {
+      console.error("Ошибка:", error.message);
+    }
+  };
+
+  //войти в приглашенные комнаты
+
+  const joinRoom = async (roomId) => {
+    try {
+      const response = await fetch(
+        `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${roomId}/join`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "Ошибка при присоединении к комнате: " + response.status
+        );
+      }
+
+      const data = await response.json();
+      console.log("Вы присоединились к комнате:", data);
+    } catch (error) {
+      console.error("Ошибка:", error.message);
+    }
+  };
+
   return (
     <>
       <h1>Привет {user}</h1>
       <h1>Matrix Chat</h1>
+
+      <div>
+        <h2>Список приглашений</h2>
+        {inviteRooms.length > 0 ? (
+          inviteRooms.map((room) => (
+            <div key={room} id={room}>
+              <span>{room}</span>
+              <button onClick={() => joinRoom(room)}>Присоединиться</button>
+            </div>
+          ))
+        ) : (
+          <p>Нет приглашений</p>
+        )}
+      </div>
 
       {/* проверка всех комнат */}
       <h2>Проверка всех комнат</h2>
