@@ -18,6 +18,7 @@ const Chat = () => {
   const [idRoom, setIdRoom] = useState(""); // id комнаты для поиска
   const [idRoomName, setIdRoomName] = useState(""); // имя комнаты по ее ID
   const [inviteRooms, setInviteRooms] = useState([]);
+  const [nextBatch, setNextBatch] = useState("");
 
   const navigate = useNavigate();
 
@@ -40,10 +41,10 @@ const Chat = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      getSyncUpdates();
+      getSyncUpdates(nextBatch);
     }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [nextBatch]);
 
   // Функция для получения всех комнат на сервер
   const getRooms = async () => {
@@ -166,25 +167,49 @@ const Chat = () => {
   };
 
   //получить приглашения в комнаты
-  const getSyncUpdates = async () => {
+  const getSyncUpdates = async (currentNextBatch) => {
     try {
-      const response = await fetch(
-        "https://matrix-test.maxmodal.com/_matrix/client/v3/sync",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      const url = currentNextBatch
+        ? `https://matrix-test.maxmodal.com/_matrix/client/v3/sync?since=${currentNextBatch}`
+        : "https://matrix-test.maxmodal.com/_matrix/client/v3/sync";
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
 
       if (!response.ok) {
         throw new Error("Ошибка при синхронизации: " + response.status);
       }
 
       const data = await response.json();
-      const idRooms = Object.keys(data.rooms.invite);
-      setInviteRooms(idRooms);
+      console.log("Полученные данные:", data);
+
+      // Обработка текущих приглашений
+      const newInviteRooms =
+        data.rooms && data.rooms.invite ? Object.keys(data.rooms.invite) : [];
+
+      // Логируем новые приглашения для отладочных целей
+      console.log("Новые приглашения:", newInviteRooms);
+
+      // Обновляем состояние приглашений
+      setInviteRooms((prevInviteRooms) => {
+        // Создаем новый Set для уникальных приглашений
+        const uniqueInviteRooms = new Set([
+          ...prevInviteRooms,
+          ...newInviteRooms,
+        ]);
+        console.log(
+          "Обновленный список приглашений:",
+          Array.from(uniqueInviteRooms)
+        );
+        return Array.from(uniqueInviteRooms); // Возвращаем массив уникальных приглашений
+      });
+
+      // Обновляем next_batch
+      setNextBatch(data.next_batch);
     } catch (error) {
       console.error("Ошибка:", error.message);
     }
@@ -229,7 +254,11 @@ const Chat = () => {
           inviteRooms.map((room) => (
             <div key={room} id={room}>
               <span>{room}</span>
-              <button onClick={() => joinRoom(room)}>Присоединиться</button>
+              <button onClick={() => {
+                joinRoom(room).then(() => {
+                  setInviteRooms((prev) => prev.filter((r) => r !== room));
+                })
+                }}>Присоединиться</button>
             </div>
           ))
         ) : (
