@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../API/register";
+import style from "./Register.module.css";
 
 const Register = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [registrationMessage, setRegistrationMessage] = useState("");
   const [accessToken, setAccessToken] = useState(
     sessionStorage.getItem("access_token") || ""
   );
@@ -18,34 +18,42 @@ const Register = () => {
   const navigate = useNavigate();
 
   return (
-    <div className='container'>
-      <h2>Регистрация</h2>
-      <input
-        type='text'
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-        placeholder='Имя пользователя'
-      />
-      <input
-        type='password'
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        placeholder='Пароль'
-      />
-      <button
-        onClick={() => {
-          register({
-            username,
-            password,
-            setRegistrationMessage,
-            navigate,
-          });
-        }}
-      >
-        Зарегистрироваться
-      </button>
-      {registrationMessage && <div>{registrationMessage}</div>}{" "}
-      {/* Сообщение о регистрации */}
+    <div className={style.container}>
+      <h1 className={style.title}>Регистрация</h1>
+      <form className={style.form}>
+        <input
+          type='text'
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          placeholder='Имя пользователя'
+          className={style.input}
+        />
+        <input
+          type='password'
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder='Пароль'
+          className={style.input}
+        />
+        <button
+          className={style.button}
+          onClick={() => {
+            register({
+              username,
+              password,
+              navigate,
+            });
+          }}
+        >
+          Зарегистрироваться
+        </button>
+      </form>
+      <div className={style.text}>
+        Если у вас уже есть аккаунт, то{" "}
+        <span onClick={() => navigate("/login")} className={style.link}>
+          Нажмите сюда для входа
+        </span>
+      </div>
     </div>
   );
 };

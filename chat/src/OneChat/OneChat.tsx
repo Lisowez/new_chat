@@ -1,9 +1,10 @@
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { fetchMessages } from "../API/fetchMessages";
 import { handleSendMessage } from "../API/sendMessage";
 import { inviteUserToRoom } from "../API/inviteToRoom";
 import { fetchRoomMembers } from "../API/getAllMemberInRoom";
+import style from "./OneChat.module.css";
 
 const OneChat = () => {
   const id = useParams().id;

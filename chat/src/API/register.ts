@@ -1,16 +1,10 @@
 export interface RegisterProps {
   username: string;
   password: string;
-  setRegistrationMessage: (message: string) => void;
   navigate: (path: string) => void;
 }
 
-export const register = async ({
-  username,
-  password,
-  setRegistrationMessage,
-  navigate,
-}: RegisterProps) => {
+export const register = async ({ username, password, navigate }: RegisterProps) => {
   try {
     // Первый запрос для создания сессии
     const response = await fetch(
@@ -51,14 +45,12 @@ export const register = async ({
       throw new Error(secondData.error || "Ошибка регистрации");
     }
     // Успешно зарегистрированы
-    setRegistrationMessage("Успешно зарегистрирован!");
     sessionStorage.setItem("access_token", secondData.access_token);
     sessionStorage.setItem("refreshToken", secondData.refresh_token);
     sessionStorage.setItem("user", secondData.user_id);
     navigate("/chat");
     // Очистка состояния сессии
   } catch (error) {
-    setRegistrationMessage(`Ошибка регистрации: ${error.message}`);
     console.error("Ошибка регистрации:", error);
   }
 };
