@@ -1,48 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { login } from "../API/login";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loginError, setLoginError] = useState("");
-
   const navigate = useNavigate();
-
-  const login = async () => {
-    try {
-      const response = await fetch(
-        "https://matrix-test.maxmodal.com/_matrix/client/v3/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            identifier: {
-              type: "m.id.user",
-              user: username,
-            },
-            password: password,
-            type: "m.login.password",
-          }),
-        }
-      );
-
-      const data = await response.json();
-      if (response.ok) {
-        sessionStorage.setItem("access_token", data.access_token);
-        sessionStorage.setItem("user", data.user_id);
-        setLoginError(""); // Очистить сообщение об ошибке
-        navigate("/chat");
-        console.log("Успешно аутентифицирован!", data);
-      } else {
-        throw new Error(data.error || "Ошибка аутентификации");
-      }
-    } catch (error) {
-      setLoginError(error.message);
-      console.error("Ошибка аутентификации:", error);
-    }
-  };
 
   return (
     <div className='container'>
@@ -59,9 +22,13 @@ const Login = () => {
         onChange={(e) => setPassword(e.target.value)}
         placeholder='Пароль'
       />
-      <button onClick={login}>Войти</button>
-      {loginError && <div style={{ color: "red" }}>{loginError}</div>}{" "}
-      {/* Сообщение об ошибке для авторизации */}
+      <button
+        onClick={() => {
+          login({ username, password, navigate });
+        }}
+      >
+        Войти
+      </button>
     </div>
   );
 };
