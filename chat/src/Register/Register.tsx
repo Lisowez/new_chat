@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { register } from "../API/register";
 
@@ -6,6 +6,14 @@ const Register = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [registrationMessage, setRegistrationMessage] = useState("");
+  const [accessToken, setAccessToken] = useState(
+    sessionStorage.getItem("access_token") || ""
+  );
+
+  useEffect(() => {
+    setAccessToken(sessionStorage.getItem("access_token"));
+    if (accessToken) navigate("/chat");
+  }, []);
 
   const navigate = useNavigate();
 

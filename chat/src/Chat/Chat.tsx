@@ -1,31 +1,40 @@
-// src/Chat.js
-import React, { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { getRooms } from "../API/getRooms";
+import { createRoom } from "../API/createRoom";
+import { getInviteToRoom } from "../API/getInviteToRoom";
+import { joinRoom } from "../API/joinRoom";
 
 const Chat = () => {
   const [accessToken, setAccessToken] = useState(
-    sessionStorage.getItem("access_token")
+    sessionStorage.getItem("access_token") || ""
   ); //токен
   const [user, setUser] = useState(
-    sessionStorage.getItem("user").slice(1, -25) || "user"
-  ); //имя вошедшего
+    sessionStorage.getItem("user")
+      ? sessionStorage.getItem("user").slice(1, -25)
+      : "user"
+  ); //имя вошедшего   число -25 зависит от имени сервера, по сути это отбрасывает все название кроме имени
   const [rooms, setRooms] = useState([]); //список комнат
   const [roomName, setRoomName] = useState(""); //имя  комнаты при содании
   const [newRoomName, setNewRoomName] = useState(""); // id  созданой комнаты
-  // const [activeUsers, setActiveUsers] = useState([]);
-  // const [checkRoomsName, setCheckRoomsName] = useState("");
   const [inviteList, setInviteList] = useState(""); // имя приглашаемого в комнату пользователя
-  const [idRoom, setIdRoom] = useState(""); // id комнаты для поиска
-  const [idRoomName, setIdRoomName] = useState(""); // имя комнаты по ее ID
-  const [inviteRooms, setInviteRooms] = useState([]);
-  const [nextBatch, setNextBatch] = useState("");
+  const [inviteRooms, setInviteRooms] = useState([]); //список приглашений в комнату
+  const [nextBatch, setNextBatch] = useState(""); //нужно для обновления состояния
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (!accessToken) navigate("/login");
+  }, []);
+
+  useEffect(() => {
     setAccessToken(sessionStorage.getItem("access_token"));
-    setUser(sessionStorage.getItem("user").slice(1, -25));
-    getRooms();
+    setUser(
+      sessionStorage.getItem("user")
+        ? sessionStorage.getItem("user").slice(1, -25)
+        : "user"
+    );
+    getRooms({ accessToken, setRooms, fetchRoomName });
     if (rooms.length > 0) {
       setRooms(
         rooms.map(async (x) => {
@@ -36,107 +45,20 @@ const Chat = () => {
   }, []);
 
   useEffect(() => {
-    getRooms();
+    getRooms({ accessToken, setRooms, fetchRoomName });
   }, [newRoomName]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      getSyncUpdates(nextBatch);
+      getInviteToRoom({
+        currentNextBatch: nextBatch,
+        setInviteRooms,
+        accessToken,
+        setNextBatch,
+      });
     }, 10000);
     return () => clearInterval(interval);
   }, [nextBatch]);
-
-  // Функция для получения всех комнат на сервер
-  const getRooms = async () => {
-    try {
-      const response = await fetch(
-        "https://matrix-test.maxmodal.com/_matrix/client/v3/joined_rooms",
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-      if (response.ok) {
-        const idRooms = data.joined_rooms;
-        const roomNames = await Promise.all(
-          idRooms.map((id) => fetchRoomName(id))
-        );
-        const idAndName = roomNames.map((room, index) => {
-          return { name: room, id: idRooms[index] };
-        });
-
-        setRooms(idAndName);
-        return data; // Возвращаем данные с комнатам
-      } else {
-        throw new Error(data.error || "Ошибка получения комнат");
-      }
-    } catch (error) {
-      console.error("Ошибка при получении комнат:", error);
-    }
-  };
-
-  //функция для создания комнаты
-
-  const createRoom = async () => {
-    try {
-      const response = await fetch(
-        "https://matrix-test.maxmodal.com/_matrix/client/v3/createRoom",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            creation_content: {
-              "m.federate": false,
-            },
-            name: roomName,
-            preset: "public_chat",
-            invite:
-              inviteList && inviteList.length > 0
-                ? inviteList.split(",").map((x) => x.trim())
-                : undefined,
-          }),
-        }
-      );
-      const data = await response.json();
-      if (response.ok) {
-        setNewRoomName(data.room_id);
-        console.log("Комната успешно создана:", data);
-      }
-    } catch (error) {
-      console.error("Ошибка при создании комнаты:", error);
-    }
-  };
-
-  // // Функция для получения списка пользователей в комнате
-  // const getActiveUsers = async () => {
-  //   try {
-  //     const response = await fetch(
-  //       `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${checkRoomsName}/joined_members`,
-  //       {
-  //         method: "GET",
-  //         headers: {
-  //           Authorization: `Bearer ${accessToken}`,
-  //           "Content-Type": "application/json",
-  //         },
-  //       }
-  //     );
-  //     const data = await response.json();
-  //     if (response.ok) {
-  //       const users = Object.keys(data.joined);
-  //       setActiveUsers((prev) => [...prev, ...users]);
-  //     }
-  //   } catch (error) {
-  //     console.error("Ошибка при получении пользователей:", error);
-  //   }
-  // };
 
   // получение названия комнаты по ID
   const fetchRoomName = async (id) => {
@@ -159,87 +81,9 @@ const Chat = () => {
       }
 
       const data = await response.json();
-      setIdRoomName(data.name); // получаем название комнаты из ответа
       return data.name;
     } catch (error) {
       console.error(error.message);
-    }
-  };
-
-  //получить приглашения в комнаты
-  const getSyncUpdates = async (currentNextBatch) => {
-    try {
-      const url = currentNextBatch
-        ? `https://matrix-test.maxmodal.com/_matrix/client/v3/sync?since=${currentNextBatch}`
-        : "https://matrix-test.maxmodal.com/_matrix/client/v3/sync";
-
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Ошибка при синхронизации: " + response.status);
-      }
-
-      const data = await response.json();
-      console.log("Полученные данные:", data);
-
-      // Обработка текущих приглашений
-      const newInviteRooms =
-        data.rooms && data.rooms.invite ? Object.keys(data.rooms.invite) : [];
-
-      // Логируем новые приглашения для отладочных целей
-      console.log("Новые приглашения:", newInviteRooms);
-
-      // Обновляем состояние приглашений
-      setInviteRooms((prevInviteRooms) => {
-        // Создаем новый Set для уникальных приглашений
-        const uniqueInviteRooms = new Set([
-          ...prevInviteRooms,
-          ...newInviteRooms,
-        ]);
-        console.log(
-          "Обновленный список приглашений:",
-          Array.from(uniqueInviteRooms)
-        );
-        return Array.from(uniqueInviteRooms); // Возвращаем массив уникальных приглашений
-      });
-
-      // Обновляем next_batch
-      setNextBatch(data.next_batch);
-    } catch (error) {
-      console.error("Ошибка:", error.message);
-    }
-  };
-
-  //войти в приглашенные комнаты
-
-  const joinRoom = async (roomId) => {
-    try {
-      const response = await fetch(
-        `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${roomId}/join`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "Ошибка при присоединении к комнате: " + response.status
-        );
-      }
-
-      const data = await response.json();
-      console.log("Вы присоединились к комнате:", data);
-    } catch (error) {
-      console.error("Ошибка:", error.message);
     }
   };
 
@@ -254,11 +98,15 @@ const Chat = () => {
           inviteRooms.map((room) => (
             <div key={room} id={room}>
               <span>{room}</span>
-              <button onClick={() => {
-                joinRoom(room).then(() => {
-                  setInviteRooms((prev) => prev.filter((r) => r !== room));
-                })
-                }}>Присоединиться</button>
+              <button
+                onClick={() => {
+                  joinRoom({ roomId: room, accessToken }).then(() => {
+                    setInviteRooms((prev) => prev.filter((r) => r !== room));
+                  });
+                }}
+              >
+                Присоединиться
+              </button>
             </div>
           ))
         ) : (
@@ -266,9 +114,7 @@ const Chat = () => {
         )}
       </div>
 
-      {/* проверка всех комнат */}
-      <h2>Проверка всех комнат</h2>
-      <button onClick={() => getRooms()}>Получить все комнаты</button>
+      <h2>Список всех комнат</h2>
       <div>
         {rooms && rooms.length > 0
           ? rooms.map((room) => (
@@ -294,8 +140,13 @@ const Chat = () => {
           placeholder='название'
           onChange={(e) => setRoomName(e.target.value)}
         />
-        <button onClick={createRoom}>создать</button>
-        <div>id комнаты - {newRoomName}</div>
+        <button
+          onClick={() => {
+            createRoom({ accessToken, setNewRoomName, roomName, inviteList });
+          }}
+        >
+          создать
+        </button>
       </div>
 
       {/* проверка активных пользователей в комнате

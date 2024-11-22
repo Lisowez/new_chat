@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { login } from "../API/login";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [accessToken, setAccessToken] = useState(
+    sessionStorage.getItem("access_token") || ""
+  );
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setAccessToken(sessionStorage.getItem("access_token"));
+    if (accessToken) navigate("/chat");
+  }, []);
 
   return (
     <div className='container'>
