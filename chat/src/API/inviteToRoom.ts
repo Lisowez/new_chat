@@ -19,7 +19,9 @@ export const inviteUserToRoom = async ({
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ user_id: invite }),
+        body: JSON.stringify({
+          user_id: `@${invite}:matrix-test.maxmodal.com`,
+        }),
       }
     );
 

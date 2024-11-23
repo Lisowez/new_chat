@@ -29,7 +29,9 @@ export const createRoom = async ({
           preset: "public_chat",
           invite:
             inviteList && inviteList.length > 0
-              ? inviteList.split(",").map((x) => x.trim())
+              ? inviteList
+                  .split(",")
+                  .map((x) => `@${x.trim()}:matrix-test.maxmodal.com`)
               : undefined,
         }),
       }
