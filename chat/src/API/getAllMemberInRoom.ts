@@ -11,7 +11,7 @@ export const fetchRoomMembers = async ({
 }: IGetAllMember) => {
   try {
     const response = await fetch(
-      `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${id}/members`,
+      `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${id}/joined_members`,
       {
         method: "GET",
         headers: {
@@ -28,8 +28,7 @@ export const fetchRoomMembers = async ({
     }
 
     const data = await response.json();
-    console.log(new Set(data.chunk.map((x) => x.user_id)));
-    setUserList(Array.from(new Set(data.chunk.map((x) => x.user_id))));
+    setUserList(Object.keys(data.joined));
     return data.chunk; // Возвращаем массив участников
   } catch (error) {
     console.error("Ошибка:", error.message);

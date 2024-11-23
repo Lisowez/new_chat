@@ -5,6 +5,7 @@ import { createRoom } from "../API/createRoom";
 import { getInviteToRoom } from "../API/getInviteToRoom";
 import { joinRoom } from "../API/joinRoom";
 import style from "./Chat.module.css";
+import { leaveRoom } from "../API/leaveRoom";
 
 const Chat = () => {
   const [accessToken, setAccessToken] = useState(
@@ -47,7 +48,7 @@ const Chat = () => {
 
   useEffect(() => {
     getRooms({ accessToken, setRooms, fetchRoomName });
-  }, [newRoomName,inviteList]);
+  }, [newRoomName, inviteList]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -101,9 +102,13 @@ const Chat = () => {
                 <button
                   className={style.inviteButton}
                   onClick={() => {
-                    joinRoom({ roomId: room, accessToken }).then(() => {
-                      setInviteRooms((prev) => prev.filter((r) => r !== room));
-                    });
+                    joinRoom({ roomId: room, accessToken })
+                      .then(() => {getRooms({ accessToken, setRooms, fetchRoomName })})
+                      .then(() => {
+                        setInviteRooms((prev) =>
+                          prev.filter((r) => r !== room)
+                        );
+                      });
                   }}
                 >
                   Присоединиться
@@ -126,6 +131,16 @@ const Chat = () => {
                     onClick={() => navigate(`/chat/${room.id}`)}
                   >
                     Войти в комнату
+                  </button>
+                  <button
+                    className={style.leaveRoomButton}
+                    onClick={() =>
+                      leaveRoom({ roomId: room.id, accessToken }).then(() => {
+                        getRooms({ accessToken, setRooms, fetchRoomName });
+                      })
+                    }
+                  >
+                    покинуть комнату
                   </button>
                 </div>
               ))

@@ -46,7 +46,8 @@
 }
 
 .inviteButton,
-.roomButton {
+.roomButton,
+.leaveRoomButton {
   height: 50px;
   width: 150px;
   border: 1px solid black;
@@ -109,4 +110,26 @@
   background-color: black;
   transition: 0.5s;
   cursor: pointer;
+}
+
+.roomButton {
+  background-color: greenyellow;
+  transition: 0.5s;
+}
+
+.leaveRoomButton {
+  background-color: orange;
+  transition: 0.5s;
+}
+
+.roomButton:hover {
+  background-color: green;
+  cursor: pointer;
+  transition: 0.5s;
+}
+
+.leaveRoomButton:hover {
+  background-color: red;
+  cursor: pointer;
+  transition: 0.5s;
 }
