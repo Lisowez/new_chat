@@ -35,9 +35,6 @@ export const getInviteToRoom = async ({
     const newInviteRooms =
       data.rooms && data.rooms.invite ? Object.keys(data.rooms.invite) : [];
 
-    // Логируем новые приглашения для отладочных целей
-    console.log("Новые приглашения:", newInviteRooms);
-
     // Обновляем состояние приглашений
     setInviteRooms((prevInviteRooms) => {
       // Создаем новый Set для уникальных приглашений

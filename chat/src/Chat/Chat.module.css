@@ -133,3 +133,18 @@
   cursor: pointer;
   transition: 0.5s;
 }
+
+.leaveButton {
+  height: 50px;
+  width: 150px;
+  border-radius: 15px;
+  background-color: red;
+  color: white;
+  transition: 0.5s;
+}
+
+.leaveButton:hover {
+  background-color: darkred;
+  cursor: pointer;
+  transition: 0.5s;
+}

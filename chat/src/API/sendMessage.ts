@@ -6,7 +6,12 @@ export interface ISendMessage {
   id: string;
 }
 
-export const handleSendMessage = async ({ accessToken, message, setMessage, id }:ISendMessage) => {
+export const handleSendMessage = async ({
+  accessToken,
+  message,
+  setMessage,
+  id,
+}: ISendMessage) => {
   try {
     const response = await fetch(
       `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${id}/send/m.room.message`,
@@ -26,10 +31,8 @@ export const handleSendMessage = async ({ accessToken, message, setMessage, id }
     if (!response.ok) {
       throw new Error("Ошибка при отправке сообщения: " + response.status);
     } else {
-      console.log("сообщение отправлено");
+      setMessage(""); // очищаем сообщение после отправки
     }
-
-    setMessage(""); // очищаем сообщение после отправки
   } catch (error) {
     console.error(error.message);
   }

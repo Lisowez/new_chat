@@ -3,7 +3,7 @@ export interface ILeaveRoom {
   accessToken: string;
 }
 
-export const leaveRoom = async ({ roomId, accessToken }:ILeaveRoom) => {
+export const leaveRoom = async ({ roomId, accessToken }: ILeaveRoom) => {
   const response = await fetch(
     `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${roomId}/leave`,
     {
@@ -17,11 +17,11 @@ export const leaveRoom = async ({ roomId, accessToken }:ILeaveRoom) => {
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(
+    alert(
       "Ошибка при выходе из комнаты: " +
         (errorData.error || response.statusText)
     );
   }
 
-  console.log("Вы успешно покинули комнату");
+  alert("Вы успешно покинули комнату");
 };

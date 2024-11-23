@@ -24,13 +24,11 @@ export const inviteUserToRoom = async ({
     );
 
     if (!response.ok) {
-      throw new Error(
-        "Ошибка при приглашении пользователя: " + response.status
-      );
+      alert("Ошибка при приглашении пользователя: " + response.status);
     }
 
     const data = await response.json();
-    console.log("Пользователь успешно приглашен:", data);
+    alert("Пользователь успешно приглашен:");
   } catch (error) {
     console.error("Ошибка:", error.message);
   }

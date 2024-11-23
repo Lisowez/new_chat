@@ -6,8 +6,12 @@ export interface CreateRoomProps {
   inviteList: string;
 }
 
-
-export const createRoom = async ({ accessToken, setNewRoomName, roomName, inviteList }) => {
+export const createRoom = async ({
+  accessToken,
+  setNewRoomName,
+  roomName,
+  inviteList,
+}) => {
   try {
     const response = await fetch(
       "https://matrix-test.maxmodal.com/_matrix/client/v3/createRoom",
@@ -33,9 +37,11 @@ export const createRoom = async ({ accessToken, setNewRoomName, roomName, invite
     const data = await response.json();
     if (response.ok) {
       setNewRoomName(data.room_id);
-      console.log("Комната успешно создана:", data);
+      alert("Комната успешно создана:");
+    } else {
+      alert("Ошибка при создании комнаты: " + data.error);
     }
   } catch (error) {
-    console.error("Ошибка при создании комнаты:", error);
+    console.log(error);
   }
 };

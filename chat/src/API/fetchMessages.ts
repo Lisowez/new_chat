@@ -31,11 +31,6 @@ export const fetchMessages = async ({
 
     const data = await response.json();
     setMessages(data.chunk.filter((x) => x.type === "m.room.message"));
-    console.log(
-      data.chunk
-        .filter((x) => x.type === "m.room.message")
-        .map((x) => x.sender === myId)
-    );
     setCreator(data.chunk.filter((x) => x.type === "m.room.create")[0].sender);
   } catch (error) {
     console.error(error.message);

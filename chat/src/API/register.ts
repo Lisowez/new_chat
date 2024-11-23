@@ -4,7 +4,11 @@ export interface RegisterProps {
   navigate: (path: string) => void;
 }
 
-export const register = async ({ username, password, navigate }: RegisterProps) => {
+export const register = async ({
+  username,
+  password,
+  navigate,
+}: RegisterProps) => {
   try {
     // Первый запрос для создания сессии
     const response = await fetch(

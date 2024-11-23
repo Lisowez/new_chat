@@ -37,7 +37,8 @@ const Register = () => {
         />
         <button
           className={style.button}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
             register({
               username,
               password,

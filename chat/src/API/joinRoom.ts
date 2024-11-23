@@ -18,11 +18,11 @@ export const joinRoom = async ({ roomId, accessToken }: IJoinRoom) => {
     );
 
     if (!response.ok) {
-      throw new Error("Ошибка при присоединении к комнате: " + response.status);
+      alert("Ошибка при присоединении к комнате: " + response.status);
     }
 
     const data = await response.json();
-    console.log("Вы присоединились к комнате:", data);
+   alert("Вы присоединились к комнате");
   } catch (error) {
     console.error("Ошибка:", error.message);
   }

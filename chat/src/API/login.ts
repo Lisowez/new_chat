@@ -30,7 +30,7 @@ export const login = async ({ username, password, navigate }: LoginProps) => {
       sessionStorage.setItem("user", data.user_id);
       navigate("/chat");
     } else {
-      throw new Error(data.error || "Ошибка аутентификации");
+      alert(data.error || "Ошибка аутентификации");
     }
   } catch (error) {
     console.error("Ошибка аутентификации:", error);

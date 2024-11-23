@@ -6,6 +6,7 @@ import { getInviteToRoom } from "../API/getInviteToRoom";
 import { joinRoom } from "../API/joinRoom";
 import style from "./Chat.module.css";
 import { leaveRoom } from "../API/leaveRoom";
+import { logout } from "../API/logout";
 
 const Chat = () => {
   const [accessToken, setAccessToken] = useState(
@@ -91,7 +92,15 @@ const Chat = () => {
 
   return (
     <div className={style.container}>
-      <h1 className={style.title}>Привет {user}</h1>
+      <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <h1 className={style.title}>Привет {user}</h1>
+        <button
+          className={style.leaveButton}
+          onClick={() => logout(accessToken)}
+        >
+          Выйти
+        </button>
+      </div>
       <div className={style.roomsAndInvite}>
         <div className={style.invites}>
           <h2 className={style.inviteTitle}>Список приглашений</h2>
@@ -103,7 +112,9 @@ const Chat = () => {
                   className={style.inviteButton}
                   onClick={() => {
                     joinRoom({ roomId: room, accessToken })
-                      .then(() => {getRooms({ accessToken, setRooms, fetchRoomName })})
+                      .then(() => {
+                        getRooms({ accessToken, setRooms, fetchRoomName });
+                      })
                       .then(() => {
                         setInviteRooms((prev) =>
                           prev.filter((r) => r !== room)
@@ -164,10 +175,16 @@ const Chat = () => {
             onChange={(e) => setRoomName(e.target.value)}
           />
           <button
+          disabled={!roomName}
             className={style.button}
             onClick={(e) => {
               e.preventDefault();
-              createRoom({ accessToken, setNewRoomName, roomName, inviteList });
+              createRoom({
+                accessToken,
+                setNewRoomName,
+                roomName,
+                inviteList,
+              });
             }}
           >
             создать
