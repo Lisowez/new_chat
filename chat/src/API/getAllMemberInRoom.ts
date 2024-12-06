@@ -2,12 +2,12 @@
 export interface IGetAllMember {
   accessToken: string;
   id: string;
-  setUserList: ([]) => void;
+  setMembers: ([]) => void;
 }
 export const fetchRoomMembers = async ({
   accessToken,
   id,
-  setUserList,
+  setMembers,
 }: IGetAllMember) => {
   try {
     const response = await fetch(
@@ -28,8 +28,8 @@ export const fetchRoomMembers = async ({
     }
 
     const data = await response.json();
-    setUserList(Object.keys(data.joined));
-    return data.chunk; // Возвращаем массив участников
+    setMembers(Object.keys(data.joined));
+    return data.chunk;
   } catch (error) {
     console.error("Ошибка:", error.message);
   }

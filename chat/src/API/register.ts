@@ -52,7 +52,7 @@ export const register = async ({
     sessionStorage.setItem("access_token", secondData.access_token);
     sessionStorage.setItem("refreshToken", secondData.refresh_token);
     sessionStorage.setItem("user", secondData.user_id);
-    navigate("/chat");
+    navigate("/chatik");
     // Очистка состояния сессии
   } catch (error) {
     console.error("Ошибка регистрации:", error);

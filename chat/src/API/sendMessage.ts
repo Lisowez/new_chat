@@ -27,11 +27,10 @@ export const handleSendMessage = async ({
         }),
       }
     );
-
-    if (!response.ok) {
-      throw new Error("Ошибка при отправке сообщения: " + response.status);
-    } else {
+    if (response.ok) {
       setMessage(""); // очищаем сообщение после отправки
+    } else {
+      throw new Error("Ошибка при отправке сообщения: " + response.status);
     }
   } catch (error) {
     console.error(error.message);

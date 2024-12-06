@@ -20,9 +20,6 @@ export const joinRoom = async ({ roomId, accessToken }: IJoinRoom) => {
     if (!response.ok) {
       alert("Ошибка при присоединении к комнате: " + response.status);
     }
-
-    const data = await response.json();
-   alert("Вы присоединились к комнате");
   } catch (error) {
     console.error("Ошибка:", error.message);
   }

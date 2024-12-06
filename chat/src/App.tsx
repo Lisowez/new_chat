@@ -1,5 +1,4 @@
 import React from "react";
-import Chat from "./Chat/Chat";
 import router from "./APP/Router";
 import { RouterProvider } from "react-router-dom";
 

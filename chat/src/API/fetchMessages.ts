@@ -1,18 +1,18 @@
+import { markAllMessagesAsRead } from "./markAllMessagesAsRead";
+
 //информация о сообщениях и создателе чата
 export interface IMessagesProps {
   accessToken: string;
   id: string;
-  myId: string;
-  setCreator: (creator: string) => void;
   setMessages: (messages: []) => void;
+  setCreator: (creator: {}) => void;
 }
 
 export const fetchMessages = async ({
   accessToken,
   id,
-  myId,
-  setCreator,
   setMessages,
+  setCreator,
 }: IMessagesProps) => {
   try {
     const response = await fetch(
@@ -30,8 +30,12 @@ export const fetchMessages = async ({
     }
 
     const data = await response.json();
-    setMessages(data.chunk.filter((x) => x.type === "m.room.message"));
-    setCreator(data.chunk.filter((x) => x.type === "m.room.create")[0].sender);
+    const messages = data.chunk.filter((x) => x.type === "m.room.message");
+    const creator = data.chunk.filter((x) => x.type === "m.room.create")[0];
+    setMessages(messages);
+    setCreator(creator);
+    const finishEvent = data.chunk[data.chunk.length - 1].event_id
+    markAllMessagesAsRead({roomId:id,eventId:finishEvent, accessToken})
   } catch (error) {
     console.error(error.message);
   }

@@ -1,9 +1,8 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Register from "../Register/Register";
-import Chat from "../Chat/Chat";
 import Login from "../Login/Login";
 import RedirectPage from "./RedirectPage";
-import OneChat from "../OneChat/OneChat";
+import { Chatik } from "../Chatik/Chatik";
 
 const router = createBrowserRouter([
   {
@@ -19,12 +18,8 @@ const router = createBrowserRouter([
     element: <Register />,
   },
   {
-    path: "chat",
-    element: <Chat />,
-  },
-  {
-    path: "chat/:id",
-    element: <OneChat />,
+    path: "chatik",
+    element: <Chatik />,
   },
 ]);
 

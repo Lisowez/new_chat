@@ -9,12 +9,16 @@ const Login = () => {
   const [accessToken, setAccessToken] = useState(
     sessionStorage.getItem("access_token") || ""
   );
+  // const [loginError, setLoginError] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
 
   useEffect(() => {
     setAccessToken(sessionStorage.getItem("access_token"));
     if (accessToken) navigate("/chat");
   }, []);
+
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{7,}$/;
 
   return (
     <div className={style.container}>
@@ -23,18 +27,33 @@ const Login = () => {
         <input
           type='text'
           value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setUsername(value);
+          }}
           placeholder='Имя пользователя'
           className={style.input}
         />
         <input
           type='password'
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            const value = e.target.value;
+            setPassword(value);
+            if (passwordRegex.test(value)) {
+              setPasswordError("");
+            } else {
+              setPasswordError(
+                "Пароль должен содержать не менее 7 символов, включая хотя бы одну заглавную букву и цифру."
+              );
+            }
+          }}
           placeholder='Пароль'
           className={style.input}
         />
+        <div style={{ color: "red", padding: "5px 20px" }}>{passwordError}</div>
         <button
+          disabled={!!passwordError || !username || !password}
           className={style.button}
           onClick={(e) => {
             e.preventDefault();

@@ -7,7 +7,7 @@ const RedirectPage = () => {
   useEffect(() => {
     setAccess_token(sessionStorage.getItem("access_token"));
     if (access_token) {
-      navigate("/chat");
+      navigate("/chatik");
     } else {
       navigate("/login");
     }

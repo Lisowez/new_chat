@@ -1,21 +1,23 @@
+import { join } from "path";
+import { joinRoom } from "./joinRoom";
+
 //получить приглашения в комнаты
 export interface InviteRooms {
-  currentNextBatch: string;
-  setInviteRooms: (prevInviteRooms: any) => void;
+  // currentNextBatch: string;
   accessToken: string;
-  setNextBatch: (nextBatch: string) => void;
+  // setNextBatch: (nextBatch: string) => void;
+  setOnlineUsers: (onlineUsers: []) => void;
 }
 
 export const getInviteToRoom = async ({
-  currentNextBatch,
-  setInviteRooms,
+  // currentNextBatch,
   accessToken,
-  setNextBatch,
+  // setNextBatch,
+  setOnlineUsers,
 }: InviteRooms) => {
   try {
-    const url = currentNextBatch
-      ? `https://matrix-test.maxmodal.com/_matrix/client/v3/sync?since=${currentNextBatch}`
-      : "https://matrix-test.maxmodal.com/_matrix/client/v3/sync";
+    const url =
+      "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=30000&filter=0";
 
     const response = await fetch(url, {
       method: "GET",
@@ -29,28 +31,33 @@ export const getInviteToRoom = async ({
     }
 
     const data = await response.json();
-    console.log("Полученные данные:", data);
 
     // Обработка текущих приглашений
     const newInviteRooms =
       data.rooms && data.rooms.invite ? Object.keys(data.rooms.invite) : [];
-
-    // Обновляем состояние приглашений
-    setInviteRooms((prevInviteRooms) => {
-      // Создаем новый Set для уникальных приглашений
-      const uniqueInviteRooms = new Set([
-        ...prevInviteRooms,
-        ...newInviteRooms,
-      ]);
-      console.log(
-        "Обновленный список приглашений:",
-        Array.from(uniqueInviteRooms)
-      );
-      return Array.from(uniqueInviteRooms); // Возвращаем массив уникальных приглашений
+    const joinToRooms = newInviteRooms.map((x) => {
+      joinRoom({
+        roomId: x,
+        accessToken,
+      });
     });
 
-    // Обновляем next_batch
-    setNextBatch(data.next_batch);
+    const joinToRoomsPromises = Promise.all(joinToRooms);
+    setOnlineUsers(
+      data.presence.events
+        .filter((x) => x.content.presence === "online")
+        .map((x) => x.sender.slice(1, -25))
+    );
+    const rooms = Object.keys(data.rooms.join);
+    const dataEvents = rooms.map((x) => {
+      const eventRead =
+        data.rooms.join[x].account_data.events[0].content.event_id;
+      if (eventRead) {
+        const messages = data.rooms.join[x].timeline.events;
+        const finishMessageId = messages[messages.length - 1].event_id;
+        console.log(finishMessageId !== eventRead);
+      }
+    });
   } catch (error) {
     console.error("Ошибка:", error.message);
   }

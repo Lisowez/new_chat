@@ -28,9 +28,14 @@ export const login = async ({ username, password, navigate }: LoginProps) => {
     if (response.ok) {
       sessionStorage.setItem("access_token", data.access_token);
       sessionStorage.setItem("user", data.user_id);
-      navigate("/chat");
+      navigate("/chatik");
+    } else if (!response.ok && data.errcode === "M_LIMIT_EXCEEDED") {
+      alert(
+        "Слишком много запросов" +
+          `повторите через ${Math.floor(data.retry_after_ms / 1000)}секунд`
+      );
     } else {
-      alert(data.error || "Ошибка аутентификации");
+      alert("Неверный логин или пароль");
     }
   } catch (error) {
     console.error("Ошибка аутентификации:", error);

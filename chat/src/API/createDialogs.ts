@@ -1,11 +1,11 @@
-//функция для создания комнаты
+//функция для создания Диалога
 export interface CreateRoomProps {
   accessToken: string;
   roomName: string;
   inviteList: string;
 }
 
-export const createRoom = async ({ accessToken, roomName, inviteList }) => {
+export const createDialog = async ({ accessToken, roomName, inviteList }) => {
   try {
     const response = await fetch(
       "https://matrix-test.maxmodal.com/_matrix/client/v3/createRoom",
@@ -20,22 +20,24 @@ export const createRoom = async ({ accessToken, roomName, inviteList }) => {
             "m.federate": false,
           },
           name: roomName,
-          preset: "public_chat",
-          is_direct: false,
+          preset: "private_chat",
+          is_direct: true,
           invite:
             inviteList && inviteList.length > 0
-              ? inviteList.map((x) => `@${x.trim()}:matrix-test.maxmodal.com`)
+              ? inviteList
+                  .split(",")
+                  .map((x) => `@${x.trim()}:matrix-test.maxmodal.com`)
               : undefined,
         }),
       }
     );
     const data = await response.json();
     if (response.ok) {
-      console.log(data);
-      alert("Комната успешно создана:");
+      console.log(data.room_id);
+      alert("Диалог успешно создан:");
     } else {
-      console.log(data);
-      alert("Ошибка при создании комнаты: " + data.error);
+      console.log(data.error);
+      alert("Ошибка при создании диалога: " + data.error);
     }
   } catch (error) {
     console.log(error);

@@ -1,12 +1,10 @@
 // Функция для получения всех комнат на сервер
 export interface Room {
   access_token: string;
-  setRooms: (rooms: any) => void;
-  fetchRoomName: (roomId: string) => Promise<string>;
+  // fetchRoomName: (roomId: string) => Promise<string>;
 }
 
-
-export const getRooms = async ({ accessToken, setRooms ,fetchRoomName}) => {
+export const getRooms = async ({ accessToken }) => {
   try {
     const response = await fetch(
       "https://matrix-test.maxmodal.com/_matrix/client/v3/joined_rooms",
@@ -21,15 +19,6 @@ export const getRooms = async ({ accessToken, setRooms ,fetchRoomName}) => {
 
     const data = await response.json();
     if (response.ok) {
-      const idRooms = data.joined_rooms;
-      const roomNames = await Promise.all(
-        idRooms.map((id) => fetchRoomName(id))
-      );
-      const idAndName = roomNames.map((room, index) => {
-        return { name: room, id: idRooms[index] };
-      });
-
-      setRooms(idAndName);
       return data; // Возвращаем данные с комнатам
     } else {
       throw new Error(data.error || "Ошибка получения комнат");
