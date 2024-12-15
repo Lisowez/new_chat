@@ -12,6 +12,8 @@ import { logout } from "../API/logout";
 import { leaveRoom } from "../API/leaveRoom";
 import { deleteMessage } from "../API/deleteMessage";
 import { getUnreadNotifications } from "../API/notification";
+import { withOutBatch } from "../API/withOutBatch";
+import { withBatch } from "../API/withBatch";
 
 interface ICreator {
   sender: string;
@@ -44,6 +46,23 @@ export const Chatik = () => {
   const [userBlocks, setUserBlocks] = useState([]);
   const [showOnlineStatus, setShowOnlineStatus] = useState(false);
   const [showUsersBlock, setShowUsersBlock] = useState(false);
+  const [batch, setBatch] = useState(null);
+  const [notification, setNotification] = useState([]);
+  useEffect(() => {
+    console.log(notification);
+  }, [notification]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (batch) {
+        withBatch(accessToken, batch, setBatch, setNotification, notification);
+      } else {
+        withOutBatch(accessToken, setBatch, setNotification, notification);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [batch, setBatch]);
 
   useEffect(() => {
     setAccessToken(sessionStorage.getItem("access_token"));
@@ -100,6 +119,11 @@ export const Chatik = () => {
 
     return () => clearInterval(interval);
   }, []);
+
+  function findNotifications(idRoom) {
+    const oneNotification = notification.find((x) => x.id === idRoom);
+    return oneNotification?.count;
+  }
 
   return (
     <div className={style.container}>
@@ -161,6 +185,12 @@ export const Chatik = () => {
                           : "🔴"}
                       </span>
                     )}
+                    {notification.length > 0 && (
+                      <span style={{ color: "red", marginLeft: "10px" }}>
+                        {notification.find((x) => x.id === dialog.roomId)
+                          .count || ""}
+                      </span>
+                    )}
                   </div>
                   <button
                     onClick={() =>
@@ -214,6 +244,12 @@ export const Chatik = () => {
                   >
                     {room.name}
                   </div>
+                  {notification.length > 0 && (
+                    <span style={{ color: "red", marginLeft: "5px" }}>
+                      {notification.find((x) => x.id === room.roomId).count ||
+                        ""}
+                    </span>
+                  )}
                   <button
                     onClick={() =>
                       leaveRoom({ accessToken, roomId: room.roomId })
