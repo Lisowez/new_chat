@@ -121,10 +121,15 @@ export const Chatik = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // function findNotifications(idRoom) {
-  //   const oneNotification = notification.find((x) => x.id === idRoom);
-  //   return oneNotification?.count;
-  // }
+  function findNotifications(idRoom) {
+    const oneNotification = notification.find((x) => x.id === idRoom);
+    const notificationNumber = oneNotification?.count;
+    if (notificationNumber) {
+      return notificationNumber;
+    } else {
+      return "";
+    }
+  }
 
   const setZeroNotification = (roomId: string) => {
     setNotification((prevNotifications) => {
@@ -209,10 +214,7 @@ export const Chatik = () => {
                     )}
                     {notification.length > 0 && (
                       <span style={{ color: "red", marginLeft: "10px" }}>
-                        {notification.find((x) => x.id === dialog.roomId)
-                          ? notification.find((x) => x.id === dialog.roomId)
-                              ?.count || ""
-                          : ""}
+                        {findNotifications(dialog.roomId)}
                       </span>
                     )}
                   </div>
@@ -271,8 +273,7 @@ export const Chatik = () => {
                   </div>
                   {notification.length > 0 && (
                     <span style={{ color: "red", marginLeft: "5px" }}>
-                      {notification.find((x) => x.id === room.roomId).count ||
-                        ""}
+                      {findNotifications(room.roomId)}
                     </span>
                   )}
                   <button
