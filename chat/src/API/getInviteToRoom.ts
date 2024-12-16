@@ -17,7 +17,7 @@ export const getInviteToRoom = async ({
 }: InviteRooms) => {
   try {
     const url =
-      "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=30000&filter=0";
+      "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=30000";
 
     const response = await fetch(url, {
       method: "GET",

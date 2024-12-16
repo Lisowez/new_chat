@@ -14,6 +14,8 @@ import { deleteMessage } from "../API/deleteMessage";
 import { getUnreadNotifications } from "../API/notification";
 import { withOutBatch } from "../API/withOutBatch";
 import { withBatch } from "../API/withBatch";
+import img from "../addUser.png";
+import { inviteUserToRoom } from "../API/inviteToRoom";
 
 interface ICreator {
   sender: string;
@@ -48,9 +50,8 @@ export const Chatik = () => {
   const [showUsersBlock, setShowUsersBlock] = useState(false);
   const [batch, setBatch] = useState(null);
   const [notification, setNotification] = useState([]);
-  useEffect(() => {
-    console.log(notification);
-  }, [notification]);
+  const [showAddUser, setShowAddUser] = useState(false);
+  const [addNewUser, setAddNewUser] = useState("");
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -120,10 +121,30 @@ export const Chatik = () => {
     return () => clearInterval(interval);
   }, []);
 
-  function findNotifications(idRoom) {
-    const oneNotification = notification.find((x) => x.id === idRoom);
-    return oneNotification?.count;
-  }
+  // function findNotifications(idRoom) {
+  //   const oneNotification = notification.find((x) => x.id === idRoom);
+  //   return oneNotification?.count;
+  // }
+
+  const setZeroNotification = (roomId: string) => {
+    setNotification((prevNotifications) => {
+      const updatedNotifications = [...prevNotifications];
+      notification.forEach((newNotification) => {
+        const existingNotificationIndex = updatedNotifications.findIndex(
+          (n) => n.id === roomId
+        );
+        if (existingNotificationIndex > -1) {
+          updatedNotifications[existingNotificationIndex].count = 0;
+        }
+      });
+      return updatedNotifications;
+    });
+  };
+
+  const getNameDialog = () => {
+    const dialog = dialogs.find((dialog) => dialog.roomId === idActiveRoom);
+    return dialog?.members?.find((member) => member !== user);
+  };
 
   return (
     <div className={style.container}>
@@ -173,6 +194,7 @@ export const Chatik = () => {
                         id: dialog.roomId,
                         setMembers,
                       });
+                      setZeroNotification(dialog.roomId);
                     }}
                   >
                     {dialog.members.filter((x) => x !== user)[0] || dialog.name}
@@ -188,7 +210,7 @@ export const Chatik = () => {
                     {notification.length > 0 && (
                       <span style={{ color: "red", marginLeft: "10px" }}>
                         {notification.find((x) => x.id === dialog.roomId)
-                          .count || ""}
+                          ?.count || ""}
                       </span>
                     )}
                   </div>
@@ -240,6 +262,7 @@ export const Chatik = () => {
                         accessToken,
                         roomId: room.roomId,
                       });
+                      setZeroNotification(room.roomId);
                     }}
                   >
                     {room.name}
@@ -263,7 +286,13 @@ export const Chatik = () => {
           </div>
         </div>
         <div className={style.chatBlock}>
-          <h2 className={style.nameChat}>{chatName}</h2>
+          <h2 className={style.nameChat}>
+            {showUsersBlock && idActiveRoom
+              ? `Вы в комнате: ${chatName}`
+              : !showUsersBlock && idActiveRoom
+              ? `Диалог с ${getNameDialog()} `
+              : ""}
+          </h2>
           <div className={style.chat}>
             <div className={style.messages}>
               {creator && (
@@ -293,14 +322,27 @@ export const Chatik = () => {
                       }}
                     >
                       Вы:{" "}
-                      <div
-                        style={{ cursor: "pointer", color: "red" }}
-                        onClick={() => {
-                          // deleteMessage({});
-                        }}
-                      >
-                        удалить
-                      </div>
+                      {mes.content.body && (
+                        <div
+                          style={{ cursor: "pointer", color: "red" }}
+                          onClick={() => {
+                            deleteMessage({
+                              roomId: idActiveRoom,
+                              eventId: mes.event_id,
+                              accessToken,
+                            }).then(() => {
+                              fetchMessages({
+                                accessToken,
+                                id: idActiveRoom,
+                                setMessages,
+                                setCreator,
+                              });
+                            });
+                          }}
+                        >
+                          удалить
+                        </div>
+                      )}
                     </div>
                   )}
                   <div
@@ -312,7 +354,9 @@ export const Chatik = () => {
                     Отправлено:{" "}
                     {new Date(mes.origin_server_ts).toLocaleString()}
                   </div>
-                  {mes.content.body}
+                  {mes.content.body || (
+                    <span style={{ color: "gray" }}>сообщение удалено</span>
+                  )}
                 </div>
               ))}
             </div>
@@ -324,6 +368,7 @@ export const Chatik = () => {
                 value={message}
               />
               <button
+                disabled={message.length === 0}
                 onClick={() => {
                   handleSendMessage({
                     accessToken: accessToken,
@@ -363,6 +408,40 @@ export const Chatik = () => {
                 )}
               </div>
             ))}
+            <div className={style.addUser}>
+              <img
+                onClick={() => setShowAddUser(true)}
+                className={style.img}
+                src={img}
+                alt='addUser'
+              />
+            </div>
+            {showAddUser && (
+              <form>
+                <input
+                  onChange={(e) => setAddNewUser(e.target.value)}
+                  value={addNewUser}
+                  type='text'
+                />
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    inviteUserToRoom({
+                      accessToken,
+                      id: idActiveRoom,
+                      invite: addNewUser,
+                    })
+                      .then(() => {
+                        setShowAddUser(false);
+                        setAddNewUser("");
+                      })
+                      .catch(console.error);
+                  }}
+                >
+                  Добавить
+                </button>
+              </form>
+            )}
           </div>
         )}
       </div>

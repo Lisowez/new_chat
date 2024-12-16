@@ -212,6 +212,21 @@
   transition: 0.5s;
 }
 
-.message{
+.message {
   width: 50%;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+}
+
+.addUser {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.img:hover {
+  cursor: pointer;
 }
