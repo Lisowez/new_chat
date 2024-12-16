@@ -210,7 +210,9 @@ export const Chatik = () => {
                     {notification.length > 0 && (
                       <span style={{ color: "red", marginLeft: "10px" }}>
                         {notification.find((x) => x.id === dialog.roomId)
-                          ?.count || ""}
+                          ? notification.find((x) => x.id === dialog.roomId)
+                              ?.count || ""
+                          : ""}
                       </span>
                     )}
                   </div>
