@@ -1,8 +1,10 @@
+import { refreshAccessToken } from "./refresh";
+
 export const withOutBatch = async (
   accessToken: string,
   setBatch,
   setNotification,
-  notification
+  setAccessToken
 ) => {
   const url =
     "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=500";
@@ -59,6 +61,7 @@ export const withOutBatch = async (
     }
     setBatch(data.next_batch);
   } catch (error) {
-    console.error("Произошла ошибка:", error);
+    console.error("Произошла ошибка111:", error);
+    refreshAccessToken(setAccessToken);
   }
 };

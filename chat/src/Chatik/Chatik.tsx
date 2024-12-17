@@ -11,7 +11,6 @@ import { handleSendMessage } from "../API/sendMessage";
 import { logout } from "../API/logout";
 import { leaveRoom } from "../API/leaveRoom";
 import { deleteMessage } from "../API/deleteMessage";
-import { getUnreadNotifications } from "../API/notification";
 import { withOutBatch } from "../API/withOutBatch";
 import { withBatch } from "../API/withBatch";
 import img from "../addUser.png";
@@ -56,19 +55,25 @@ export const Chatik = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       if (batch) {
-        withBatch(accessToken, batch, setBatch, setNotification, notification);
+        withBatch(
+          accessToken,
+          batch,
+          setBatch,
+          setNotification,
+          setAccessToken
+        );
       } else {
-        withOutBatch(accessToken, setBatch, setNotification, notification);
+        withOutBatch(accessToken, setBatch, setNotification, setAccessToken);
       }
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [batch, setBatch]);
+  }, [batch, setBatch, accessToken]);
 
   useEffect(() => {
     setAccessToken(sessionStorage.getItem("access_token"));
     if (!accessToken) navigate("/login");
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     if (!showAddDialog && !showAddRoom) {
@@ -94,7 +99,7 @@ export const Chatik = () => {
       });
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [accessToken]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -108,7 +113,7 @@ export const Chatik = () => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [idActiveRoom]);
+  }, [idActiveRoom, accessToken]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -119,7 +124,7 @@ export const Chatik = () => {
     }, 5000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [accessToken]);
 
   function findNotifications(idRoom) {
     const oneNotification = notification.find((x) => x.id === idRoom);
@@ -262,10 +267,7 @@ export const Chatik = () => {
                         id: room.roomId,
                         setMembers,
                       });
-                      getUnreadNotifications({
-                        accessToken,
-                        roomId: room.roomId,
-                      });
+
                       setZeroNotification(room.roomId);
                     }}
                   >
