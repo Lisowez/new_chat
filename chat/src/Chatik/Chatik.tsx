@@ -60,10 +60,17 @@ export const Chatik = () => {
           batch,
           setBatch,
           setNotification,
-          setAccessToken
-        );
+          setAccessToken,
+          setOnlineUsers
+        ).finally(() => setShowOnlineStatus(true));
       } else {
-        withOutBatch(accessToken, setBatch, setNotification, setAccessToken);
+        withOutBatch(
+          accessToken,
+          setBatch,
+          setNotification,
+          setAccessToken,
+          setOnlineUsers
+        ).finally(() => setShowOnlineStatus(true));
       }
     }, 5000);
 
@@ -114,17 +121,6 @@ export const Chatik = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [idActiveRoom, accessToken]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      getInviteToRoom({
-        accessToken,
-        setOnlineUsers,
-      }).finally(() => setShowOnlineStatus(true));
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [accessToken]);
 
   function findNotifications(idRoom) {
     const oneNotification = notification.find((x) => x.id === idRoom);
@@ -403,7 +399,7 @@ export const Chatik = () => {
         {showUsersBlock && (
           <div className={style.users}>
             <h2 className={style.title}>Пользователи</h2>
-            {members.map((member) => (
+            {members.filter(x=>x.slice(1, -25)!==user).map((member) => (
               <div>
                 {member.slice(1, -25)}
                 {showOnlineStatus && (
@@ -453,12 +449,6 @@ export const Chatik = () => {
       {(showAddDialog || showAddRoom) && (
         <div className={style.modal}>
           <form className={style.form}>
-            <input
-              className={style.input}
-              placeholder='название комнаты'
-              onChange={(e) => setAddRoomName(e.target.value)}
-              value={addRoomName}
-            />
             {showAddDialog && (
               <input
                 className={style.input}
@@ -470,6 +460,12 @@ export const Chatik = () => {
             )}
             {showAddRoom && (
               <>
+                <input
+                  className={style.input}
+                  placeholder='название комнаты'
+                  onChange={(e) => setAddRoomName(e.target.value)}
+                  value={addRoomName}
+                />
                 <div className={style.addUserBlock}>
                   {userBlocks.map((x) => (
                     <div>{x}</div>
@@ -509,7 +505,7 @@ export const Chatik = () => {
                 if (showAddDialog) {
                   createDialog({
                     accessToken,
-                    roomName: addRoomName,
+                    roomName: addUser,
                     inviteList: addUser,
                   }).finally(() => setShowAddDialog(false));
                 }

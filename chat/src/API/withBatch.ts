@@ -1,3 +1,4 @@
+import { joinRoom } from "./joinRoom";
 import { refreshAccessToken } from "./refresh";
 
 export const withBatch = async (
@@ -5,7 +6,8 @@ export const withBatch = async (
   since: string,
   setBatch,
   setNotification,
-  setAccessToken
+  setAccessToken,
+  setOnlineUsers
 ) => {
   const url = `https://matrix-test.maxmodal.com/_matrix/client/v3/sync?filter={"room":{"state":{"lazy_load":true}}}&timeout=500&since=${since}`;
 
@@ -26,7 +28,6 @@ export const withBatch = async (
     }
 
     const data = await response.json();
-    console.log("Следующая Синхронизация успешна:", data);
     if (data.rooms && data.rooms.join) {
       const arr = Object.keys(data.rooms.join);
       const arr1 = arr.map((x) => {
@@ -65,6 +66,17 @@ export const withBatch = async (
       setBatch(null);
     } else {
       setBatch(data.next_batch);
+    }
+    if (data.presence) {
+      const onlineUsers = data.presence.events.map((x) => {
+        return x.sender.slice(1, -25);
+      });
+      setOnlineUsers(onlineUsers);
+    }
+
+    if (data.rooms && data.rooms.invite) {
+      const invite = Object.keys(data.rooms.invite);
+      invite.map((x) => joinRoom({ roomId: x, accessToken }));
     }
   } catch (error) {
     console.error("Произошла ошибка:", error);

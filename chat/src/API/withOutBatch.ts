@@ -1,10 +1,12 @@
+import { joinRoom } from "./joinRoom";
 import { refreshAccessToken } from "./refresh";
 
 export const withOutBatch = async (
   accessToken: string,
   setBatch,
   setNotification,
-  setAccessToken
+  setAccessToken,
+  setOnlineUsers
 ) => {
   const url =
     "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=500";
@@ -60,6 +62,17 @@ export const withOutBatch = async (
       });
     }
     setBatch(data.next_batch);
+    if (data.presence) {
+      const onlineUsers = data.presence.events.map((x) => {
+        return x.sender.slice(1, -25);
+      });
+      setOnlineUsers(onlineUsers);
+    }
+
+    if (data.rooms && data.rooms.invite) {
+      const invite = Object.keys(data.rooms.invite);
+      invite.map((x) => joinRoom({ roomId: x, accessToken }));
+    }
   } catch (error) {
     console.error("Произошла ошибка111:", error);
     refreshAccessToken(setAccessToken);
