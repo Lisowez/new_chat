@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import style from "./Chatik.module.css";
 import { useNavigate } from "react-router-dom";
 import { createRoom } from "../API/createRoom";
@@ -51,6 +51,15 @@ export const Chatik = () => {
   const [notification, setNotification] = useState([]);
   const [showAddUser, setShowAddUser] = useState(false);
   const [addNewUser, setAddNewUser] = useState("");
+
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    ref.current.scrollTo({
+      top: ref.current.scrollHeight,
+      behavior: "smooth",
+    });
+  }, [messages]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -295,7 +304,7 @@ export const Chatik = () => {
               : ""}
           </h2>
           <div className={style.chat}>
-            <div className={style.messages}>
+            <div className={style.messages} ref={ref}>
               {creator && (
                 <h3>
                   Комната была создана: {creator.sender.slice(1, -25)}{" "}
@@ -399,16 +408,18 @@ export const Chatik = () => {
         {showUsersBlock && (
           <div className={style.users}>
             <h2 className={style.title}>Пользователи</h2>
-            {members.filter(x=>x.slice(1, -25)!==user).map((member) => (
-              <div>
-                {member.slice(1, -25)}
-                {showOnlineStatus && (
-                  <span>
-                    {onlineUsers.includes(member.slice(1, -25)) ? "🟢" : "🔴"}
-                  </span>
-                )}
-              </div>
-            ))}
+            {members
+              .filter((x) => x.slice(1, -25) !== user)
+              .map((member) => (
+                <div>
+                  {member.slice(1, -25)}
+                  {showOnlineStatus && (
+                    <span>
+                      {onlineUsers.includes(member.slice(1, -25)) ? "🟢" : "🔴"}
+                    </span>
+                  )}
+                </div>
+              ))}
             <div className={style.addUser}>
               <img
                 onClick={() => setShowAddUser(true)}
