@@ -230,3 +230,19 @@
 .img:hover {
   cursor: pointer;
 }
+
+.loadMore {
+  margin: 0 auto;
+  padding: 5px;
+  width: 30%;
+  border: 0.5px solid black;
+  border-radius: 15%;
+  transform: scale(1);
+  transition: 0.5s;
+}
+
+.loadMore:hover {
+  cursor: pointer;
+  transform: scale(1.1);
+  transition: 0.5s;
+}

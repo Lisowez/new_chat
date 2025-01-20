@@ -7,9 +7,21 @@ export const withBatch = async (
   setBatch,
   setNotification,
   setAccessToken,
-  setOnlineUsers
+  setOnlineUsers,
+  onlineUsers,
+  setAllRooms,
+  setDialogs,
+  allRooms,
+  dialogs,
+  setLeaveRooms,
+  setIsLoadingRooms,
+  setIsLoadingDialogs
 ) => {
-  const url = `https://matrix-test.maxmodal.com/_matrix/client/v3/sync?filter={"room":{"state":{"lazy_load":true}}}&timeout=500&since=${since}`;
+  let url;
+  since
+    ? (url = `https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=30000&since=${since}`)
+    : (url =
+        "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=30000");
 
   try {
     const response = await fetch(url, {
@@ -67,19 +79,158 @@ export const withBatch = async (
     } else {
       setBatch(data.next_batch);
     }
-    if (data.presence) {
-      const onlineUsers = data.presence.events.map((x) => {
-        return x.sender.slice(1, -25);
+    if (since && data.rooms && data.rooms.leave) {
+      const id = Object.keys(data.rooms.leave)[0];
+      setLeaveRooms((prevRooms) => {
+        return [...prevRooms, id];
       });
-      setOnlineUsers(onlineUsers);
+    }
+    if (data.presence) {
+      const newOnlineUsers = data.presence.events
+        .filter((x) => x.content.presence === "online")
+        .map((x) => {
+          return x.sender.slice(1, -25);
+        });
+      const newOfflineUsers = data.presence.events
+        .filter((x) => x.content.presence === "offline")
+        .map((x) => {
+          return x.sender.slice(1, -25);
+        });
+      const allStatusUsers = Array.from(
+        new Set([...onlineUsers, ...newOnlineUsers])
+      ).filter((x) => !newOfflineUsers.includes(x));
+
+      setOnlineUsers(allStatusUsers);
     }
 
     if (data.rooms && data.rooms.invite) {
       const invite = Object.keys(data.rooms.invite);
       invite.map((x) => joinRoom({ roomId: x, accessToken }));
     }
+
+    withBatch(
+      accessToken,
+      data.next_batch,
+      setBatch,
+      setNotification,
+      setAccessToken,
+      setOnlineUsers,
+      onlineUsers,
+      setAllRooms,
+      setDialogs,
+      allRooms,
+      dialogs,
+      setLeaveRooms,
+      setIsLoadingRooms,
+      setIsLoadingDialogs
+    );
+
+    if (!since && data.rooms && data.rooms.join) {
+      const arr = Object.keys(data.rooms.join);
+      arr.map((x) => {
+        const name =
+          data.rooms.join[x]?.state?.events.find(
+            (y) => y.type === "m.room.name"
+          )?.content?.name ||
+          data.rooms.join[x].timeline.events.find(
+            (y) => y.type === "m.room.name"
+          )?.content?.name;
+        const roomId = x;
+        const members = data.rooms.join[x]?.state?.events
+          ?.filter(
+            (y) =>
+              y.type === "m.room.member" && y.content?.membership === "join"
+          )
+          .map((y) => {
+            return y.sender.slice(1, -25);
+          })
+          .concat(
+            data.rooms.join[x].timeline.events
+              .filter(
+                (y) =>
+                  y.type === "m.room.member" && y.content?.membership === "join"
+              )
+              .map((y) => {
+                return y.sender.slice(1, -25);
+              })
+          );
+
+        const isDirect =
+          (data.rooms.join[x]?.timeline?.events?.filter(
+            (y) => y.type === "m.room.join_rules"
+          ).length
+            ? data.rooms.join[x]?.timeline?.events?.filter(
+                (y) => y.type === "m.room.join_rules"
+              )[0].content.join_rule
+            : data.rooms.join[x]?.state?.events?.filter(
+                (y) => y.type === "m.room.join_rules"
+              )[0]?.content?.join_rule) === "invite";
+
+        const objectInfo = {
+          name,
+          roomId,
+          members,
+          isDirect,
+        };
+        objectInfo.isDirect
+          ? setDialogs((prevDialogs) => {
+              return [...prevDialogs, objectInfo];
+            })
+          : setAllRooms((prevRooms) => {
+              return [...prevRooms, objectInfo];
+            });
+      });
+    }
+    if (since && data.rooms && data.rooms.join) {
+      const arr = Object.keys(data.rooms.join);
+      arr.map((x) => {
+        if (
+          data.rooms.join[x].timeline.events.find(
+            (y) =>
+              y.type === "m.room.create" &&
+              data.rooms.join[x].timeline.events.length !== 2
+          )
+        ) {
+          const name = data.rooms.join[x].timeline.events.find(
+            (y) => y.type === "m.room.name"
+          )?.content?.name;
+
+          const roomId = x;
+
+          const isDirect =
+            data.rooms.join[x]?.timeline.events.find(
+              (y) => y.type === "m.room.join_rules"
+            ).content.join_rule === "invite";
+          console.log(data.rooms.join[x].timeline.events);
+          const members = data.rooms.join[x].timeline?.events
+            .filter(
+              (y) =>
+                y.type === "m.room.member" && y.content?.membership === "join"
+            )
+            .map((y) => {
+              return y.sender.slice(1, -25);
+            });
+          const objectInfo = {
+            name,
+            roomId,
+            members,
+            isDirect,
+          };
+          objectInfo.isDirect
+            ? setDialogs((prevDialogs) => {
+                return [...prevDialogs, objectInfo];
+              })
+            : setAllRooms((prevRooms) => {
+                return [...prevRooms, objectInfo];
+              });
+        }
+      });
+    }
   } catch (error) {
-    console.error("Произошла ошибка:", error);
-    refreshAccessToken(setAccessToken);
+    if (error.message.includes("401")) {
+      refreshAccessToken(setAccessToken);
+    } else {
+      console.error("Произошла ошибка:", error);
+    }
   }
 };

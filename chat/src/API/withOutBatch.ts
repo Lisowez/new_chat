@@ -9,7 +9,7 @@ export const withOutBatch = async (
   setOnlineUsers
 ) => {
   const url =
-    "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=500";
+    "https://matrix-test.maxmodal.com/_matrix/client/v3/sync?timeout=30000";
 
   try {
     const response = await fetch(url, {

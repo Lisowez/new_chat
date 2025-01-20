@@ -50,7 +50,7 @@ export const register = async ({
     }
     // Успешно зарегистрированы
     sessionStorage.setItem("access_token", secondData.access_token);
-    sessionStorage.setItem("refreshToken", secondData.refresh_token);
+    sessionStorage.setItem("refresh_token", secondData.refresh_token);
     sessionStorage.setItem("user", secondData.user_id);
     navigate("/chatik");
     // Очистка состояния сессии

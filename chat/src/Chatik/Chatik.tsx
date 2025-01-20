@@ -51,6 +51,12 @@ export const Chatik = () => {
   const [notification, setNotification] = useState([]);
   const [showAddUser, setShowAddUser] = useState(false);
   const [addNewUser, setAddNewUser] = useState("");
+  const [uniqueDialogs, setUniqueDialogs] = useState([]);
+  const [uniqueRooms, setUniqueRooms] = useState([]);
+  const [leaveRooms, setLeaveRooms] = useState([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
+  const [isLoadingDialogs, setIsLoadingDialogs] = useState(false);
+  const [paginationMessages, setPaginationMessages] = useState(20);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -62,29 +68,23 @@ export const Chatik = () => {
   }, [messages]);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (batch) {
-        withBatch(
-          accessToken,
-          batch,
-          setBatch,
-          setNotification,
-          setAccessToken,
-          setOnlineUsers
-        ).finally(() => setShowOnlineStatus(true));
-      } else {
-        withOutBatch(
-          accessToken,
-          setBatch,
-          setNotification,
-          setAccessToken,
-          setOnlineUsers
-        ).finally(() => setShowOnlineStatus(true));
-      }
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [batch, setBatch, accessToken]);
+    withBatch(
+      accessToken,
+      batch,
+      setBatch,
+      setNotification,
+      setAccessToken,
+      setOnlineUsers,
+      onlineUsers,
+      setAllRooms,
+      setDialogs,
+      allRooms,
+      dialogs,
+      setLeaveRooms,
+      setIsLoadingRooms,
+      setIsLoadingDialogs
+    ).finally(() => setShowOnlineStatus(true));
+  }, [accessToken]);
 
   useEffect(() => {
     setAccessToken(sessionStorage.getItem("access_token"));
@@ -99,38 +99,6 @@ export const Chatik = () => {
     }
   }, [showAddDialog, showAddRoom]);
 
-  useEffect(() => {
-    getAllRoomsStates(accessToken).then((roomsStates) => {
-      const rooms = roomsStates.filter((state) => state.isDirect === false);
-      setAllRooms(rooms);
-      const dialogs = roomsStates.filter((state) => state.isDirect === true);
-      setDialogs(dialogs);
-    });
-    const interval = setInterval(() => {
-      getAllRoomsStates(accessToken).then((roomsStates) => {
-        const rooms = roomsStates.filter((state) => state.isDirect === false);
-        setAllRooms(rooms);
-        const dialogs = roomsStates.filter((state) => state.isDirect === true);
-        setDialogs(dialogs);
-      });
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [accessToken]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (idActiveRoom) {
-        fetchMessages({
-          accessToken,
-          id: idActiveRoom,
-          setMessages,
-          setCreator,
-        });
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [idActiveRoom, accessToken]);
-
   function findNotifications(idRoom) {
     const oneNotification = notification.find((x) => x.id === idRoom);
     const notificationNumber = oneNotification?.count;
@@ -140,6 +108,46 @@ export const Chatik = () => {
       return "";
     }
   }
+
+  useEffect(() => {
+    setIsLoadingDialogs(true);
+    const timer = setTimeout(() => {
+      const uniqueItemsMap = new Map();
+      dialogs.forEach((item) => {
+        if (!uniqueItemsMap.has(item.roomId)) {
+          uniqueItemsMap.set(item.roomId, item);
+        }
+      });
+      const uniqueItems = Array.from(uniqueItemsMap.values()).filter(
+        (item) => !leaveRooms.includes(item.roomId)
+      );
+      setUniqueDialogs(uniqueItems);
+      setIsLoadingDialogs(false);
+    }, 1000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [dialogs, leaveRooms]);
+
+  useEffect(() => {
+    setIsLoadingRooms(true);
+    const timer = setTimeout(() => {
+      const uniqueItemsMap = new Map();
+      allRooms.forEach((item) => {
+        if (!uniqueItemsMap.has(item.roomId)) {
+          uniqueItemsMap.set(item.roomId, item);
+        }
+      });
+      const uniqueItems = Array.from(uniqueItemsMap.values()).filter(
+        (item) => !leaveRooms.includes(item.roomId)
+      );
+      setUniqueRooms(uniqueItems);
+      setIsLoadingRooms(false);
+    }, 1000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [allRooms, leaveRooms]);
 
   const setZeroNotification = (roomId: string) => {
     setNotification((prevNotifications) => {
@@ -152,9 +160,44 @@ export const Chatik = () => {
           updatedNotifications[existingNotificationIndex].count = 0;
         }
       });
+      console.log(updatedNotifications);
       return updatedNotifications;
     });
   };
+
+  const previousCountRef = useRef();
+
+  useEffect(() => {
+    if (idActiveRoom) {
+      const oneNotification = notification.find((x) => x.id === idActiveRoom);
+
+      if (oneNotification) {
+        const previousCount = previousCountRef.current;
+        if (previousCount !== oneNotification.count) {
+          fetchMessages({
+            accessToken,
+            id: idActiveRoom,
+            setMessages,
+            setCreator,
+          });
+        }
+
+        previousCountRef.current = oneNotification.count;
+      }
+    }
+  }, [notification, accessToken]);
+
+  useEffect(() => {
+    if (idActiveRoom) {
+      setPaginationMessages(20);
+      fetchMessages({
+        accessToken,
+        id: idActiveRoom,
+        setMessages,
+        setCreator,
+      });
+    }
+  }, [idActiveRoom, accessToken]);
 
   const getNameDialog = () => {
     const dialog = dialogs.find((dialog) => dialog.roomId === idActiveRoom);
@@ -190,53 +233,68 @@ export const Chatik = () => {
               </button>
             </h2>
             <div className={style.dialogs}>
-              {dialogs.map((dialog) => (
-                <div className={style.room} key={dialog.id}>
-                  <div
-                    className={style.roomName}
-                    onClick={() => {
-                      setShowUsersBlock(false);
-                      setIdActiveRoom(dialog.roomId);
-                      fetchMessages({
-                        accessToken,
-                        id: dialog.roomId,
-                        setMessages,
-                        setCreator,
-                      });
-                      setChatName(dialog.name);
-                      fetchRoomMembers({
-                        accessToken,
-                        id: dialog.roomId,
-                        setMembers,
-                      });
-                      setZeroNotification(dialog.roomId);
-                    }}
-                  >
-                    {dialog.members.filter((x) => x !== user)[0] || dialog.name}
-                    {showOnlineStatus && (
-                      <span>
-                        {onlineUsers.includes(
-                          dialog.members.filter((x) => x !== user)[0]
-                        )
-                          ? "🟢"
-                          : "🔴"}
-                      </span>
-                    )}
-                    {notification.length > 0 && (
-                      <span style={{ color: "red", marginLeft: "10px" }}>
-                        {findNotifications(dialog.roomId)}
-                      </span>
-                    )}
+              {isLoadingDialogs && <div>Загрузка...</div>}
+              {!isLoadingDialogs &&
+                uniqueDialogs.map((dialog) => (
+                  <div className={style.room} key={dialog.id}>
+                    <div
+                      className={style.roomName}
+                      onClick={() => {
+                        setShowUsersBlock(false);
+                        setIdActiveRoom(dialog.roomId);
+                        // fetchMessages({
+                        //   accessToken,
+                        //   id: dialog.roomId,
+                        //   setMessages,
+                        //   setCreator,
+                        // });
+                        setChatName(dialog.name);
+                        fetchRoomMembers({
+                          accessToken,
+                          id: dialog.roomId,
+                          setMembers,
+                        });
+                        setZeroNotification(dialog.roomId);
+                      }}
+                    >
+                      {dialog.members.filter((x) => x !== user)[0] ||
+                        dialog.name}
+                      {showOnlineStatus && (
+                        <span>
+                          {onlineUsers.includes(
+                            dialog.members.filter((x) => x !== user)[0] ||
+                              dialog.name
+                          )
+                            ? "🟢"
+                            : "🔴"}
+                        </span>
+                      )}
+                      {notification.length > 0 && (
+                        <span style={{ color: "red", marginLeft: "10px" }}>
+                          {findNotifications(dialog.roomId)}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => {
+                        leaveRoom({ accessToken, roomId: dialog.roomId }).then(
+                          () => {
+                            setUniqueDialogs((prevDialogs) =>
+                              prevDialogs.filter(
+                                (x) => x.roomId !== dialog.roomId
+                              )
+                            );
+                            setChatName("");
+                            setIdActiveRoom("");
+                            setMessages([]);
+                          }
+                        );
+                      }}
+                    >
+                      Выйти из диалога
+                    </button>
                   </div>
-                  <button
-                    onClick={() =>
-                      leaveRoom({ accessToken, roomId: dialog.roomId })
-                    }
-                  >
-                    Выйти из диалога
-                  </button>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
           <div className={style.roomsBlock}>
@@ -253,45 +311,57 @@ export const Chatik = () => {
               </button>
             </h2>
             <div className={style.rooms}>
-              {allRooms.map((room) => (
-                <div className={style.room} key={room.id}>
-                  <div
-                    className={style.roomName}
-                    onClick={() => {
-                      setShowUsersBlock(true);
-                      setIdActiveRoom(room.roomId);
-                      fetchMessages({
-                        accessToken,
-                        id: room.roomId,
-                        setMessages,
-                        setCreator,
-                      });
-                      setChatName(room.name);
-                      fetchRoomMembers({
-                        accessToken,
-                        id: room.roomId,
-                        setMembers,
-                      });
+              {isLoadingRooms && <div>Загрузка...</div>}
+              {!isLoadingRooms &&
+                uniqueRooms.map((room) => (
+                  <div className={style.room} key={room.id}>
+                    <div
+                      className={style.roomName}
+                      onClick={() => {
+                        setIdActiveRoom(room.roomId);
+                        // fetchMessages({
+                        //   accessToken,
+                        //   id: room.roomId,
+                        //   setMessages,
+                        //   setCreator,
+                        // });
+                        setShowUsersBlock(true);
+                        setChatName(room.name);
+                        fetchRoomMembers({
+                          accessToken,
+                          id: room.roomId,
+                          setMembers,
+                        });
 
-                      setZeroNotification(room.roomId);
-                    }}
-                  >
-                    {room.name}
+                        setZeroNotification(room.roomId);
+                      }}
+                    >
+                      {room.name}
+                    </div>
+                    {notification.length > 0 && (
+                      <span style={{ color: "red", marginLeft: "5px" }}>
+                        {findNotifications(room.roomId)}
+                      </span>
+                    )}
+                    <button
+                      onClick={() =>
+                        leaveRoom({ accessToken, roomId: room.roomId }).then(
+                          () => {
+                            setUniqueRooms((prevRooms) =>
+                              prevRooms.filter((x) => x.roomId !== room.roomId)
+                            );
+                            setShowUsersBlock(false);
+                            setChatName("");
+                            setIdActiveRoom("");
+                            setMessages([]);
+                          }
+                        )
+                      }
+                    >
+                      Выйти из комнаты
+                    </button>
                   </div>
-                  {notification.length > 0 && (
-                    <span style={{ color: "red", marginLeft: "5px" }}>
-                      {findNotifications(room.roomId)}
-                    </span>
-                  )}
-                  <button
-                    onClick={() =>
-                      leaveRoom({ accessToken, roomId: room.roomId })
-                    }
-                  >
-                    Выйти из комнаты
-                  </button>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
@@ -300,18 +370,37 @@ export const Chatik = () => {
             {showUsersBlock && idActiveRoom
               ? `Вы в комнате: ${chatName}`
               : !showUsersBlock && idActiveRoom
-              ? `Диалог с ${getNameDialog()} `
+              ? `Диалог с ${
+                  getNameDialog() ||
+                  dialogs.find((x) => x.roomId === idActiveRoom).name
+                } `
               : ""}
           </h2>
           <div className={style.chat}>
             <div className={style.messages} ref={ref}>
-              {creator && (
+              {creator && idActiveRoom && (
                 <h3>
                   Комната была создана: {creator.sender.slice(1, -25)}{" "}
                   {new Date(creator.origin_server_ts).toLocaleString()}
                 </h3>
               )}
-              {messages.map((mes) => (
+              {messages.length > paginationMessages && (
+                <div
+                  className={style.loadMore}
+                  onClick={() => setPaginationMessages((prev) => prev + 20)}
+                >
+                  загрузить еще сообщения:{" "}
+                  {paginationMessages + 20 > messages.length
+                    ? messages.length
+                    : paginationMessages + 20}{" "}
+                  из
+                  {messages.length}
+                </div>
+              )}
+              {(messages.length > paginationMessages
+                ? messages.slice(-paginationMessages)
+                : messages
+              ).map((mes) => (
                 <div
                   className={style.message}
                   style={{
@@ -518,6 +607,7 @@ export const Chatik = () => {
                     accessToken,
                     roomName: addUser,
                     inviteList: addUser,
+                    setDialogs,
                   }).finally(() => setShowAddDialog(false));
                 }
                 if (showAddRoom) {
@@ -525,6 +615,7 @@ export const Chatik = () => {
                     accessToken,
                     roomName: addRoomName,
                     inviteList: userBlocks,
+                    setAllRooms,
                   }).finally(() => setShowAddRoom(false));
                 }
               }}

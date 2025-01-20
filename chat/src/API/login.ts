@@ -20,6 +20,7 @@ export const login = async ({ username, password, navigate }: LoginProps) => {
           },
           password: password,
           type: "m.login.password",
+          refresh_token: true,
         }),
       }
     );
@@ -28,6 +29,7 @@ export const login = async ({ username, password, navigate }: LoginProps) => {
     if (response.ok) {
       sessionStorage.setItem("access_token", data.access_token);
       sessionStorage.setItem("user", data.user_id);
+      sessionStorage.setItem("refresh_token", data.refresh_token);
       navigate("/chatik");
     } else if (!response.ok && data.errcode === "M_LIMIT_EXCEEDED") {
       alert(

@@ -7,6 +7,6 @@ export const getAllRoomsStates = async (accessToken) => {
     checkRoomState({ roomId, accessToken })
   );
   const roomsStates = await Promise.all(roomsStatesPromises);
-
+  // console.log(roomsStates.filter((state) => state !== null));
   return roomsStates.filter((state) => state !== null);
 };

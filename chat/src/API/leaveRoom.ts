@@ -1,9 +1,16 @@
 export interface ILeaveRoom {
   roomId: string;
   accessToken: string;
+  // setAllRooms: () => void;
+  // setDialogs: () => void;
 }
 
-export const leaveRoom = async ({ roomId, accessToken }: ILeaveRoom) => {
+export const leaveRoom = async ({
+  roomId,
+  accessToken,
+  // setAllRooms,
+  // setDialogs,
+}: ILeaveRoom) => {
   const response = await fetch(
     `https://matrix-test.maxmodal.com/_matrix/client/v3/rooms/${roomId}/leave`,
     {

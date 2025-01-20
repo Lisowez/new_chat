@@ -3,11 +3,11 @@ export async function refreshAccessToken(
 ) {
   const url = "https://matrix-test.maxmodal.com/_matrix/client/v3/refresh";
 
-  const refreshToken = sessionStorage.getItem("refreshToken");
+  const refresh_token = sessionStorage.getItem("refresh_token");
   const clientId = sessionStorage.getItem("user");
   const body = {
     grant_type: "refresh_token",
-    refresh_token: refreshToken,
+    refresh_token: refresh_token,
     client_id: clientId,
   };
 
@@ -20,12 +20,15 @@ export async function refreshAccessToken(
   });
 
   if (!response.ok) {
-    throw new Error(`Error: ${response.statusText}`);
+    sessionStorage.removeItem("access_token");
+    sessionStorage.removeItem("refresh_token");
+    sessionStorage.removeItem("user");
+    console.error(`Error: ${response.statusText}`);
   }
 
   const data = await response.json();
   sessionStorage.setItem("access_token", data.access_token);
-  sessionStorage.setItem("refreshToken", data.refresh_token);
+  sessionStorage.setItem("refresh_token", data.refresh_token);
   setAccessToken(data.access_token);
   console.log(data);
   return data;
