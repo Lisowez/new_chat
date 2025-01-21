@@ -15,7 +15,10 @@ export const withBatch = async (
   dialogs,
   setLeaveRooms,
   setIsLoadingRooms,
-  setIsLoadingDialogs
+  setIsLoadingDialogs,
+  user,
+  setNewMessageNotification,
+  setShowNewMessageNotification
 ) => {
   let url;
   since
@@ -122,7 +125,10 @@ export const withBatch = async (
       dialogs,
       setLeaveRooms,
       setIsLoadingRooms,
-      setIsLoadingDialogs
+      setIsLoadingDialogs,
+      user,
+      setNewMessageNotification,
+      setShowNewMessageNotification
     );
 
     if (!since && data.rooms && data.rooms.join) {
@@ -223,6 +229,27 @@ export const withBatch = async (
             : setAllRooms((prevRooms) => {
                 return [...prevRooms, objectInfo];
               });
+        }
+        if (
+          data.rooms.join[x].timeline.events.find(
+            (y) => y.type === "m.room.message"
+          )
+        ) {
+          const newMessage = data.rooms.join[x].timeline.events.find(
+            (y) => y.type === "m.room.message"
+          );
+
+          if (user !== newMessage.sender.slice(1, -25)) {
+            setShowNewMessageNotification(true);
+            setNewMessageNotification({
+              sender: newMessage.sender.slice(1, -25),
+              text: newMessage.content.body,
+            });
+            setTimeout(() => {
+              setShowNewMessageNotification(false);
+              setNewMessageNotification(null);
+            }, 5000);
+          }
         }
       });
     }

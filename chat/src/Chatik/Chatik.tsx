@@ -57,7 +57,9 @@ export const Chatik = () => {
   const [isLoadingRooms, setIsLoadingRooms] = useState(false);
   const [isLoadingDialogs, setIsLoadingDialogs] = useState(false);
   const [paginationMessages, setPaginationMessages] = useState(20);
-
+  const [newMessageNotification, setNewMessageNotification] = useState(null);
+  const [showNewMessageNotification, setShowNewMessageNotification] =
+    useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -82,7 +84,10 @@ export const Chatik = () => {
       dialogs,
       setLeaveRooms,
       setIsLoadingRooms,
-      setIsLoadingDialogs
+      setIsLoadingDialogs,
+      user,
+      setNewMessageNotification,
+      setShowNewMessageNotification
     ).finally(() => setShowOnlineStatus(true));
   }, [accessToken]);
 
@@ -623,6 +628,28 @@ export const Chatik = () => {
               создать
             </button>
           </form>
+        </div>
+      )}
+      {newMessageNotification && (
+        <div className={style.messageNotification}>
+          <div className={style.messageSender}>
+            <div>
+              {" "}
+              Отпрвитель: <b>{newMessageNotification.sender}</b>
+            </div>
+            <div
+              className={style.closeNotification}
+              onClick={() => {
+                setShowNewMessageNotification(false);
+                setNewMessageNotification(null);
+              }}
+            >
+              <b>X</b>
+            </div>
+          </div>
+          <div className={style.messageText}>
+            Текст: <b>{newMessageNotification.text}</b>
+          </div>
         </div>
       )}
     </div>
