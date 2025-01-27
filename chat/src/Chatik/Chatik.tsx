@@ -428,7 +428,7 @@ export const Chatik = () => {
                   {new Date(creator.origin_server_ts).toLocaleString()}
                 </h3>
               )}
-              {messages.length > paginationMessages && (
+              {/* {messages.length > paginationMessages && (
                 <div
                   className={style.loadMore}
                   onClick={() => setPaginationMessages((prev) => prev + 20)}
@@ -440,7 +440,7 @@ export const Chatik = () => {
                   из
                   {messages.length}
                 </div>
-              )}
+              )} */}
               {(messages.length > paginationMessages
                 ? messages.slice(-paginationMessages)
                 : messages
