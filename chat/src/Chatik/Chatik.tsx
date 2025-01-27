@@ -68,6 +68,45 @@ export const Chatik = () => {
       behavior: "smooth",
     });
   }, [messages]);
+  const handleScroll = (messages: []) => {
+    if (!ref.current) return;
+
+    const { scrollTop, clientHeight, scrollHeight } = ref.current;
+    const currentScrollFromBottom = scrollHeight - scrollTop - clientHeight;
+    if (scrollTop < 1 && paginationMessages < messages.length) {
+      setPaginationMessages((prev) => {
+        const newPaginationMessages = prev + 20;
+
+        setTimeout(() => {
+          if (ref.current) {
+            const newScrollHeight = ref.current.scrollHeight;
+            ref.current.scrollTop =
+              newScrollHeight - currentScrollFromBottom - clientHeight;
+          }
+        }, 0);
+
+        return newPaginationMessages;
+      });
+    }
+  };
+
+  useEffect(() => {
+    const box = ref.current;
+
+    if (box) {
+      box.addEventListener("scroll", () => {
+        handleScroll(messages as []);
+      });
+    }
+
+    return () => {
+      if (box) {
+        box.removeEventListener("scroll", () => {
+          handleScroll(messages as []);
+        });
+      }
+    };
+  }, [messages]);
 
   useEffect(() => {
     withBatch(
@@ -464,7 +503,7 @@ export const Chatik = () => {
                 </div>
               ))}
             </div>
-            <div className={style.inputBlock}>
+            <form className={style.inputBlock}>
               <input
                 onChange={(e) => setMessage(e.target.value)}
                 className={style.input}
@@ -473,7 +512,8 @@ export const Chatik = () => {
               />
               <button
                 disabled={message.length === 0}
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
                   handleSendMessage({
                     accessToken: accessToken,
                     id: idActiveRoom,
@@ -496,7 +536,7 @@ export const Chatik = () => {
               >
                 Отправить
               </button>
-            </div>
+            </form>
           </div>
         </div>
         {showUsersBlock && (
